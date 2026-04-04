@@ -111,7 +111,7 @@ lint:
 
 ## Format code
 format:
-	ruff check --fix . && ruff format .
+	isort . && black . && ruff check --fix . && ruff format .
 
 # ---------------------------------------------------------------------------
 # Testing
@@ -130,10 +130,16 @@ clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name ".vscode" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name ".idea" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
-	find . -name "*.pyc" -type f -delete 2>/dev/null || true
-	find . -name ".DS_Store" -type f -delete 2>/dev/null || true
-	rm -rf outputs/ 2>/dev/null || true
+	find . -type d -name ".tox" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name "dist" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name "build" -exec rm -rf {} + 2>/dev/null || true
+	find . -name "*.pyc" -type f -delete
+	find . -name "*.pyo" -type f -delete
+	find . -name ".DS_Store" -type f -delete
+	rm -rf outputs/ eval_videos/ wandb/ 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
 # Help
@@ -170,7 +176,7 @@ help:
 	@echo ""
 	@echo "  Code Quality:"
 	@echo "    make lint                 Lint with ruff"
-	@echo "    make format               Format with ruff"
+    @echo "    make format               Format with isort + black + ruff"
 	@echo "    make test                 Run pytest"
 	@echo "    make clean                Remove generated files"
 
