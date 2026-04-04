@@ -1,0 +1,17 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Copy only what's needed
+COPY pyproject.toml README.md ./
+COPY mini_rainbow/ ./mini_rainbow/
+
+# Install PyTorch CPU (smallest footprint for inference)
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+# Install core + API only (no wandb, no video, no dev tools)
+RUN pip install --no-cache-dir -e ".[api]"
+
+EXPOSE 8000
+
+ENTRYPOINT ["python", "-m", "mini_rainbow.scripts.serve"]

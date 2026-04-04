@@ -15,13 +15,25 @@ setup:
 	@echo "Activate with: source .venv_mini_rainbow/bin/activate"
 	@echo "Then run: make install"
 
-## Install project + deps into active venv
+## Install core deps only (train + eval, no API, no W&B, no video)
 install:
-	uv pip install -e ".[dev]"
+	uv pip install -e .
 	@echo ""
 	@echo "NOTE: Install PyTorch separately for your CUDA version:"
-	@echo "  uv pip install torch --index-url https://download.pytorch.org/whl/cu121"
-	@echo "  (or cu118, cu124, cpu — match your nvidia-smi output)"
+	@echo "  make install-torch-cu121   # CUDA 12.1"
+	@echo "  make install-torch-cu118   # CUDA 11.8"
+	@echo "  make install-torch-cpu     # CPU only"
+	@echo ""
+	@echo "Optional extras (install only what you need):"
+	@echo "  uv pip install -e '.[wandb]'    # W&B logging"
+	@echo "  uv pip install -e '.[video]'    # Eval video recording"
+	@echo "  uv pip install -e '.[api]'      # FastAPI inference server"
+	@echo "  uv pip install -e '.[all]'      # All of the above"
+	@echo "  uv pip install -e '.[dev]'      # All + dev tools"
+
+## Install everything (all extras + dev tools, no PyTorch)
+install-all:
+	uv pip install -e ".[dev]"
 
 ## Install PyTorch for CUDA 12.1 (default for A6000)
 install-torch-cu121:
@@ -89,17 +101,26 @@ health:
 # Docker
 # ---------------------------------------------------------------------------
 
-## Build Docker image
+## Build training Docker image (core + video, no API/wandb)
 docker-build:
 	docker build -t $(IMAGE):$(TAG) -f mini_rainbow/docker/Dockerfile .
+
+## Build API Docker image (core + api only, smallest footprint)
+docker-build-api:
+	docker build -t $(IMAGE)-api:$(TAG) -f mini_rainbow/docker/Dockerfile.api .
 
 ## Run training in Docker
 docker-train:
 	docker run --rm --gpus all $(IMAGE):$(TAG) +experiment=stage1_dqn
 
-## Push image to Docker Hub
-docker-push: docker-build
+## Run API in Docker (e.g. make docker-serve CKPT=/path/to/checkpoint.pt)
+docker-serve:
+	docker run --rm -p 8000:8000 -v $(CKPT):/app/model.pt $(IMAGE)-api:$(TAG) --checkpoint /app/model.pt
+
+## Push images to Docker Hub
+docker-push: docker-build docker-build-api
 	docker push $(IMAGE):$(TAG)
+	docker push $(IMAGE)-api:$(TAG)
 
 # ---------------------------------------------------------------------------
 # Code Quality
@@ -151,7 +172,8 @@ help:
 	@echo ""
 	@echo "  Setup:"
 	@echo "    make setup                Create venv with uv"
-	@echo "    make install              Install project deps (run after activating venv)"
+	@echo "    make install              Install core deps only (skinny)"
+	@echo "    make install-all          Install all extras + dev tools"
 	@echo "    make install-torch-cu121  Install PyTorch for CUDA 12.1"
 	@echo "    make install-torch-cu118  Install PyTorch for CUDA 11.8"
 	@echo "    make install-torch-cpu    Install PyTorch CPU-only"
@@ -170,9 +192,11 @@ help:
 	@echo "    make health               Health check running API"
 	@echo ""
 	@echo "  Docker:"
-	@echo "    make docker-build         Build Docker image"
+	@echo "    make docker-build         Build training image (core + video)"
+	@echo "    make docker-build-api     Build API image (core + api, smallest)"
 	@echo "    make docker-train         Run training in Docker"
-	@echo "    make docker-push          Build and push to Docker Hub"
+	@echo "    make docker-serve CKPT=p  Run API in Docker"
+	@echo "    make docker-push          Build and push all images"
 	@echo ""
 	@echo "  Code Quality:"
 	@echo "    make lint                 Lint with ruff"
@@ -180,8 +204,8 @@ help:
 	@echo "    make test                 Run pytest"
 	@echo "    make clean                Remove generated files"
 
-.PHONY: setup install install-torch-cu121 install-torch-cu118 install-torch-cpu \
+.PHONY: setup install install-all install-torch-cu121 install-torch-cu118 install-torch-cpu \
         train-stage1 train-stage2 train smoke-test \
         eval serve health \
-        docker-build docker-train docker-push \
+        docker-build docker-build-api docker-train docker-serve docker-push \
         lint format test clean help

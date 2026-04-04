@@ -10,7 +10,23 @@ Operational guide for setting up, training, evaluating, and serving the Mini-Rai
 - [uv](https://docs.astral.sh/uv/) (fast Python package manager)
 - NVIDIA GPU + CUDA drivers (for training; check with `nvidia-smi`)
 - Docker (optional, for containerized deployment)
-- ffmpeg (for evaluation video recording: `sudo apt-get install -y ffmpeg`)
+
+---
+
+## Dependency Layout
+
+Core install is **skinny** — only what's needed to train and evaluate:
+
+| Extra | What it adds | When you need it |
+|-------|-------------|------------------|
+| *(core)* | gymnasium, hydra, numpy | Always |
+| `[wandb]` | W&B experiment tracking | If you want cloud logging |
+| `[video]` | moviepy | If you want eval video recording |
+| `[api]` | fastapi, uvicorn | If you want the inference API server |
+| `[all]` | All of the above | Convenience bundle |
+| `[dev]` | all + pytest, ruff, black, isort | Development / CI |
+
+PyTorch is installed separately to match your CUDA version.
 
 ---
 
@@ -20,12 +36,12 @@ Operational guide for setting up, training, evaluating, and serving the Mini-Rai
 git clone git@github.com:sherozshaikh/mini-rainbow-dqn.git
 cd mini-rainbow-dqn
 
-# Create project venv (named .venv_mini_rainbow)
+# Create project venv
 uv venv .venv_mini_rainbow --python 3.11
 source .venv_mini_rainbow/bin/activate
 
-# Install project dependencies
-uv pip install -e ".[dev]"
+# Install core deps (skinny — gymnasium + hydra + numpy only)
+make install
 
 # Install PyTorch for your CUDA version (pick one)
 make install-torch-cu121    # CUDA 12.1
@@ -34,6 +50,16 @@ make install-torch-cu121    # CUDA 12.1
 
 # Verify setup
 python -c "import torch; print(f'PyTorch {torch.__version__}, CUDA: {torch.cuda.is_available()}, Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"CPU\"}')"
+```
+
+### Optional extras (install only what you need)
+
+```bash
+uv pip install -e ".[wandb]"    # W&B logging
+uv pip install -e ".[video]"    # Eval video recording (requires: sudo apt-get install -y ffmpeg)
+uv pip install -e ".[api]"      # FastAPI inference server
+uv pip install -e ".[all]"      # All of the above
+uv pip install -e ".[dev]"      # All + dev tools (pytest, ruff, black, isort)
 ```
 
 ---
@@ -59,7 +85,7 @@ This runs 5M steps of baseline DQN on BreakoutNoFrameskip-v4 with:
 - Uniform replay buffer (1M capacity)
 - Epsilon-greedy: 1.0 -> 0.01 over 1M steps
 - Target network hard update every 10K steps
-- Evaluation every 100K steps (10 episodes, with video)
+- Evaluation every 100K steps (10 episodes)
 - Checkpoints saved every 250K steps
 
 ### Monitor Progress
@@ -84,7 +110,7 @@ Saved to `outputs/checkpoints/`:
 
 ### Evaluation Videos
 
-Saved to `outputs/videos/step_<N>/` as `.mp4` files.
+Requires `[video]` extra. Saved to `outputs/videos/step_<N>/` as `.mp4` files.
 
 ---
 
@@ -110,6 +136,8 @@ Runs 10 episodes with epsilon=0 and records videos to `eval_videos/`.
 
 ## API Server
 
+Requires `[api]` extra: `uv pip install -e ".[api]"`
+
 ```bash
 make serve CKPT=outputs/checkpoints/checkpoint_best.pt
 make health   # verify it's running
@@ -123,8 +151,9 @@ Endpoints:
 
 ## W&B Setup (optional)
 
+Requires `[wandb]` extra: `uv pip install -e ".[wandb]"`
+
 ```bash
-pip install wandb
 wandb login
 # Paste your API key when prompted
 ```
@@ -150,12 +179,38 @@ make train-stage1 DEVICE=cpu
 
 ---
 
+## Docker
+
+### Training image (core + video, no API/wandb)
+
+```bash
+make docker-build
+make docker-train
+```
+
+### API image (core + api only, smallest footprint)
+
+```bash
+make docker-build-api
+make docker-serve CKPT=/path/to/checkpoint.pt
+```
+
+### Push all images
+
+```bash
+docker login
+make docker-push
+```
+
+---
+
 ## Makefile Reference
 
 | Command | Description |
 |---------|-------------|
 | `make setup` | Create venv with uv |
-| `make install` | Install project deps |
+| `make install` | Install core deps only (skinny) |
+| `make install-all` | Install all extras + dev tools |
 | `make install-torch-cu121` | Install PyTorch for CUDA 12.1 |
 | `make install-torch-cu118` | Install PyTorch for CUDA 11.8 |
 | `make install-torch-cpu` | Install PyTorch CPU-only |
@@ -166,9 +221,11 @@ make train-stage1 DEVICE=cpu
 | `make eval CKPT=path` | Evaluate a checkpoint |
 | `make serve CKPT=path` | Start inference API server |
 | `make health` | Health check running API |
-| `make docker-build` | Build Docker image |
+| `make docker-build` | Build training image (core + video) |
+| `make docker-build-api` | Build API image (core + api, smallest) |
 | `make docker-train` | Run training in Docker |
-| `make docker-push` | Build and push to Docker Hub |
+| `make docker-serve CKPT=p` | Run API in Docker |
+| `make docker-push` | Build and push all images |
 | `make lint` | Lint with ruff |
 | `make format` | Format with isort + black + ruff |
 | `make test` | Run pytest |
@@ -181,10 +238,12 @@ make train-stage1 DEVICE=cpu
 | Problem | Solution |
 |---------|----------|
 | `ModuleNotFoundError: torch` | Install PyTorch: `make install-torch-cu121` |
-| `ModuleNotFoundError: ale_py` | Run: `uv pip install -e ".[dev]"` (reinstall with extras) |
+| `ModuleNotFoundError: ale_py` | Reinstall: `uv pip install -e .` |
+| `ModuleNotFoundError: wandb` | Install extra: `uv pip install -e ".[wandb]"` |
+| `ModuleNotFoundError: fastapi` | Install extra: `uv pip install -e ".[api]"` |
+| `ModuleNotFoundError: moviepy` | Install extra: `uv pip install -e ".[video]"` |
 | CUDA out of memory | Reduce `training.batch_size` or `replay.buffer_size` |
 | Slow FPS (<50) | Check GPU is being used: `nvidia-smi` during training |
-| `make help` fails | Ensure Makefile uses tabs not spaces (re-pull from git) |
 | W&B errors | Disable with `wandb.enabled=false` or run `wandb login` |
-| No video files | Install ffmpeg: `sudo apt-get install -y ffmpeg` |
-| Port 8000 in use | `lsof -ti:8000 | xargs kill -9` |
+| No video files | Install ffmpeg: `sudo apt-get install -y ffmpeg` and `[video]` extra |
+| Port 8000 in use | `lsof -ti:8000 \| xargs kill -9` |

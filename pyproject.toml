@@ -6,28 +6,33 @@ readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.11"
 dependencies = [
-    # RL & environments
+    # RL environment (ale-py and omegaconf are transitive — no need to pin)
     "gymnasium[atari,accept-rom-license]>=0.29.1",
-    "ale-py>=0.9.0",
-    "shimmy[atari]>=1.3.0",
-    # Deep learning (user installs PyTorch separately for their CUDA version)
-    # e.g.: uv pip install torch --index-url https://download.pytorch.org/whl/cu121
-    # Config
+    # Config (omegaconf comes with hydra-core)
     "hydra-core>=1.3.2",
-    "omegaconf>=2.3.0",
-    # Logging
-    "wandb>=0.16.0",
-    # API
-    "fastapi>=0.109.0",
-    "uvicorn[standard]>=0.27.0",
-    # Video recording
-    "moviepy>=1.0.3,<2.0.0",
-    # Utilities
+    # Numerics
     "numpy>=1.24.0",
+    # PyTorch: install separately for your CUDA version (see Makefile / RUNBOOK)
+    # e.g.: uv pip install torch --index-url https://download.pytorch.org/whl/cu121
 ]
 
 [project.optional-dependencies]
+# W&B experiment tracking (training only, graceful fallback if missing)
+wandb = ["wandb>=0.16.0"]
+# Inference API server
+api = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+]
+# Evaluation video recording
+video = ["moviepy>=1.0.3,<2.0.0"]
+# Everything except PyTorch
+all = [
+    "mini-rainbow[wandb,api,video]",
+]
+# Development tools
 dev = [
+    "mini-rainbow[all]",
     "pytest>=7.0",
     "ruff>=0.2.0",
     "black>=24.0",
