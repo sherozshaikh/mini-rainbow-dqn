@@ -20,6 +20,8 @@ install:
 	uv pip install -e .
 	@echo ""
 	@echo "NOTE: Install PyTorch separately for your CUDA version:"
+	@echo "  make install-torch-cu126   # CUDA 12.6+ / driver 13.0 (A6000)"
+	@echo "  make install-torch-cu124   # CUDA 12.4"
 	@echo "  make install-torch-cu121   # CUDA 12.1"
 	@echo "  make install-torch-cu118   # CUDA 11.8"
 	@echo "  make install-torch-cpu     # CPU only"
@@ -35,7 +37,15 @@ install:
 install-all:
 	uv pip install -e ".[dev]"
 
-## Install PyTorch for CUDA 12.1 (default for A6000)
+## Install PyTorch for CUDA 12.6 (for CUDA 13.0 driver — backward compatible)
+install-torch-cu126:
+	uv pip install torch --index-url https://download.pytorch.org/whl/cu126
+
+## Install PyTorch for CUDA 12.4
+install-torch-cu124:
+	uv pip install torch --index-url https://download.pytorch.org/whl/cu124
+
+## Install PyTorch for CUDA 12.1
 install-torch-cu121:
 	uv pip install torch --index-url https://download.pytorch.org/whl/cu121
 
@@ -174,6 +184,8 @@ help:
 	@echo "    make setup                Create venv with uv"
 	@echo "    make install              Install core deps only (skinny)"
 	@echo "    make install-all          Install all extras + dev tools"
+	@echo "    make install-torch-cu126  Install PyTorch for CUDA 12.6+ (A6000)"
+	@echo "    make install-torch-cu124  Install PyTorch for CUDA 12.4"
 	@echo "    make install-torch-cu121  Install PyTorch for CUDA 12.1"
 	@echo "    make install-torch-cu118  Install PyTorch for CUDA 11.8"
 	@echo "    make install-torch-cpu    Install PyTorch CPU-only"
@@ -204,7 +216,7 @@ help:
 	@echo "    make test                 Run pytest"
 	@echo "    make clean                Remove generated files"
 
-.PHONY: setup install install-all install-torch-cu121 install-torch-cu118 install-torch-cpu \
+.PHONY: setup install install-all install-torch-cu126 install-torch-cu124 install-torch-cu121 install-torch-cu118 install-torch-cpu \
         train-stage1 train-stage2 train smoke-test \
         eval serve health \
         docker-build docker-build-api docker-train docker-serve docker-push \

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import os
+from pathlib import Path
 from typing import Any
 
 from omegaconf import DictConfig, OmegaConf
@@ -35,6 +37,19 @@ class WandbLogger:
 
         try:
             import wandb
+
+            # Load WANDB_API_KEY from .env if not already in environment
+            if not os.environ.get("WANDB_API_KEY"):
+                env_file = Path.cwd() / ".env"
+                if env_file.exists():
+                    for line in env_file.read_text().splitlines():
+                        line = line.strip()
+                        if line and not line.startswith("#") and "=" in line:
+                            key, _, value = line.partition("=")
+                            if key.strip() == "WANDB_API_KEY" and value.strip():
+                                os.environ["WANDB_API_KEY"] = value.strip()
+                                logger.info("Loaded WANDB_API_KEY from .env")
+                                break
 
             # Determine run name
             run_name = cfg.get("run_name") or "mini-rainbow-run"

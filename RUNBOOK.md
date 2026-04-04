@@ -30,7 +30,7 @@ PyTorch is installed separately to match your CUDA version.
 
 ---
 
-## VM Setup (A6000 / CUDA GPU)
+## VM Setup (A6000 / CUDA 13.0)
 
 ```bash
 git clone git@github.com:sherozshaikh/mini-rainbow-dqn.git
@@ -43,10 +43,15 @@ source .venv_mini_rainbow/bin/activate
 # Install core deps (skinny — gymnasium + hydra + numpy only)
 make install
 
-# Install PyTorch for your CUDA version (pick one)
-make install-torch-cu121    # CUDA 12.1
-# make install-torch-cu118  # CUDA 11.8
-# make install-torch-cpu    # CPU only (not recommended for training)
+# Install PyTorch for CUDA 12.6 (backward compatible with driver 580 / CUDA 13.0)
+make install-torch-cu126
+
+# Install W&B for experiment tracking
+uv pip install -e ".[wandb]"
+
+# Set up W&B API key (copy .env.example and fill in your key)
+cp .env.example .env
+# Edit .env and paste your WANDB_API_KEY
 
 # Verify setup
 python -c "import torch; print(f'PyTorch {torch.__version__}, CUDA: {torch.cuda.is_available()}, Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"CPU\"}')"
