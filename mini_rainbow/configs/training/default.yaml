@@ -1,0 +1,15 @@
+# Training loop parameters
+total_steps: 5000000
+batch_size: 32
+learning_starts: 50000  # steps before first learn() call (fill buffer)
+
+# Evaluation
+eval_freq: 100000        # evaluate every N steps
+eval_episodes: 10        # episodes per evaluation
+record_video: true       # record evaluation videos
+
+# Checkpointing
+save_freq: 250000        # save checkpoint every N steps
+
+# Logging
+log_freq: 1000           # log metrics every N steps

@@ -1,0 +1,3 @@
+# Uniform replay buffer
+type: uniform
+buffer_size: 1000000

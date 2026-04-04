@@ -1,0 +1,23 @@
+defaults:
+  - env: breakout
+  - agent: dqn
+  - training: default
+  - replay: uniform
+  - _self_
+
+# Global settings
+seed: 42
+device: auto  # auto | cpu | cuda | cuda:0
+run_name: null  # auto-generated if null
+
+# Paths
+output_dir: outputs
+checkpoint_dir: ${output_dir}/checkpoints
+video_dir: ${output_dir}/videos
+
+# Weights & Biases
+wandb:
+  enabled: true
+  project: mini-rainbow
+  entity: null  # your W&B username or team
+  mode: online  # online | offline | disabled

@@ -1,0 +1,15 @@
+# Full Rainbow-Lite: Dueling Double DQN + PER
+double_dqn: true
+dueling: true
+per: true
+
+epsilon_start: 1.0
+epsilon_end: 0.01
+epsilon_decay_steps: 1000000
+
+learning_rate: 0.0000625
+adam_eps: 0.00015
+max_grad_norm: 10.0
+
+gamma: 0.99
+target_update_freq: 10000

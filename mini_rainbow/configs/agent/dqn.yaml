@@ -1,0 +1,18 @@
+# Agent configuration
+double_dqn: false
+dueling: false
+per: false
+
+# Epsilon-greedy schedule
+epsilon_start: 1.0
+epsilon_end: 0.01
+epsilon_decay_steps: 1000000
+
+# Optimization
+learning_rate: 0.0000625  # 6.25e-5, standard for Atari
+adam_eps: 0.00015
+max_grad_norm: 10.0
+
+# Q-learning
+gamma: 0.99
+target_update_freq: 10000  # steps between hard target updates

@@ -1,0 +1,9 @@
+# @package _global_
+# Stage 1: Baseline DQN
+defaults:
+  - override /env: breakout
+  - override /agent: dqn
+  - override /training: default
+  - override /replay: uniform
+
+run_name: stage1_dqn

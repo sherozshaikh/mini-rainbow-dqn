@@ -1,0 +1,10 @@
+# Prioritized experience replay buffer
+type: prioritized
+buffer_size: 1000000
+
+# PER hyperparameters
+alpha: 0.6              # priority exponent (0 = uniform, 1 = full prioritization)
+beta_start: 0.4         # importance-sampling exponent start
+beta_end: 1.0           # importance-sampling exponent end (annealed over training)
+beta_anneal_steps: 5000000
+prior_eps: 0.000001     # small constant added to priorities to avoid zero
