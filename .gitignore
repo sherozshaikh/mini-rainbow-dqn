@@ -215,6 +215,9 @@ outputs/
 eval_videos/
 wandb/
 
+# Project venv
+.venv_mini_rainbow/
+
 # Reference files (not part of codebase)
 *_reference*
 

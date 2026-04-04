@@ -5,8 +5,20 @@ from __future__ import annotations
 import logging
 import sys
 
+try:
+    import torch
+except ImportError:
+    print(
+        "\nERROR: PyTorch is not installed.\n"
+        "Install it for your CUDA version before running training:\n\n"
+        "  uv pip install torch --index-url https://download.pytorch.org/whl/cu121   # CUDA 12.1\n"
+        "  uv pip install torch --index-url https://download.pytorch.org/whl/cu118   # CUDA 11.8\n"
+        "  uv pip install torch --index-url https://download.pytorch.org/whl/cpu     # CPU only\n\n"
+        "Or use the Makefile shortcut:  make install-torch-cu121\n"
+    )
+    sys.exit(1)
+
 import hydra
-import torch
 from omegaconf import DictConfig, OmegaConf
 
 from mini_rainbow.src.agents.dqn_agent import DQNAgent

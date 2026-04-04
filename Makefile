@@ -11,8 +11,8 @@ DEVICE          := auto
 
 ## Create venv and install all deps (run once)
 setup:
-	uv venv .venv --python 3.11
-	@echo "Activate with: source .venv/bin/activate"
+	uv venv .venv_mini_rainbow --python 3.11
+	@echo "Activate with: source .venv_mini_rainbow/bin/activate"
 	@echo "Then run: make install"
 
 ## Install project + deps into active venv
@@ -176,7 +176,7 @@ help:
 	@echo ""
 	@echo "  Code Quality:"
 	@echo "    make lint                 Lint with ruff"
-    @echo "    make format               Format with isort + black + ruff"
+	@echo "    make format               Format with isort + black + ruff"
 	@echo "    make test                 Run pytest"
 	@echo "    make clean                Remove generated files"
 
