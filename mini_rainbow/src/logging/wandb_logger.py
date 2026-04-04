@@ -57,13 +57,16 @@ class WandbLogger:
             # Convert config to plain dict for W&B
             config_dict = OmegaConf.to_container(cfg, resolve=True)
 
+            # Finish any previous run before starting a new one
+            if wandb.run is not None:
+                wandb.finish()
+
             self._run = wandb.init(
                 project=wandb_cfg.project,
                 entity=wandb_cfg.get("entity"),
                 name=run_name,
                 config=config_dict,
                 mode=wandb_cfg.mode,
-                reinit=True,
             )
             self._enabled = True
             logger.info(f"W&B initialized: project={wandb_cfg.project}, run={run_name}")
