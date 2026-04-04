@@ -5,12 +5,18 @@ defaults:
   - replay: uniform
   - _self_
 
+# Disable Hydra's CWD change — stay in the project root
+hydra:
+  run:
+    dir: .
+  output_subdir: null  # no .hydra/ config dump
+
 # Global settings
 seed: 42
 device: auto  # auto | cpu | cuda | cuda:0
 run_name: null  # auto-generated if null
 
-# Paths
+# Paths (relative to project root)
 output_dir: outputs
 checkpoint_dir: ${output_dir}/checkpoints
 video_dir: ${output_dir}/videos

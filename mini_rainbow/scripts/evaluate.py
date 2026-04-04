@@ -29,7 +29,7 @@ def main() -> None:
     parser.add_argument("--episodes", type=int, default=10, help="Number of eval episodes")
     parser.add_argument("--video-dir", type=str, default="eval_videos", help="Video output dir")
     parser.add_argument("--device", type=str, default="auto", help="Device: auto|cpu|cuda")
-    parser.add_argument("--env", type=str, default="BreakoutNoFrameskip-v4", help="Env name")
+    parser.add_argument("--env", type=str, default="ALE/Breakout-v5", help="Env name")
     parser.add_argument("--dueling", action="store_true", help="Use dueling network")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     args = parser.parse_args()

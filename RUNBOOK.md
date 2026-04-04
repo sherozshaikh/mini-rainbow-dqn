@@ -85,7 +85,7 @@ Runs 1000 steps with tiny buffer, no W&B, no video. If this completes without er
 make train-stage1
 ```
 
-This runs 5M steps of baseline DQN on BreakoutNoFrameskip-v4 with:
+This runs 5M steps of baseline DQN on ALE/Breakout-v5 with:
 - Standard Q-Network (Nature DQN architecture)
 - Uniform replay buffer (1M capacity)
 - Epsilon-greedy: 1.0 -> 0.01 over 1M steps

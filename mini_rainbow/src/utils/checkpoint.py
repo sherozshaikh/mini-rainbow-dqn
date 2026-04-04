@@ -48,7 +48,8 @@ def save_checkpoint(
         checkpoint.update(extra)
 
     torch.save(checkpoint, path)
-    logger.info(f"Checkpoint saved to {path} (step={step})")
+    # logger.info(f"Checkpoint saved to {path} (step={step})")
+    logger.info(f"Checkpoint saved to {path.resolve()} (step={step})")
 
 
 def load_checkpoint(

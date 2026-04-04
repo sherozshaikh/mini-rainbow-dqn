@@ -87,6 +87,83 @@ smoke-test:
 		training.record_video=false \
 		device=$(DEVICE)
 
+## Validate ALL variants + W&B before committing to full training runs.
+## Runs 2000 steps each: DQN, Double DQN, Dueling DDQN, Rainbow-Lite (PER).
+## Then runs 500 steps with W&B enabled to verify logging works.
+## Total time: ~5 minutes on A6000.
+validate-all:
+	@echo "=== [1/5] Validating DQN (baseline) ==="
+	PYTHONPATH=. $(PYTHON) -m mini_rainbow.scripts.train \
+		+experiment=stage1_dqn \
+		training.total_steps=2000 \
+		training.learning_starts=200 \
+		training.eval_freq=1000 \
+		training.eval_episodes=1 \
+		training.save_freq=1000 \
+		training.log_freq=500 \
+		replay.buffer_size=2000 \
+		wandb.enabled=false \
+		training.record_video=false \
+		device=$(DEVICE)
+	@echo ""
+	@echo "=== [2/5] Validating Double DQN ==="
+	PYTHONPATH=. $(PYTHON) -m mini_rainbow.scripts.train \
+		agent=double_dqn \
+		training.total_steps=2000 \
+		training.learning_starts=200 \
+		training.eval_freq=1000 \
+		training.eval_episodes=1 \
+		training.save_freq=1000 \
+		training.log_freq=500 \
+		replay.buffer_size=2000 \
+		wandb.enabled=false \
+		training.record_video=false \
+		device=$(DEVICE)
+	@echo ""
+	@echo "=== [3/5] Validating Dueling DDQN ==="
+	PYTHONPATH=. $(PYTHON) -m mini_rainbow.scripts.train \
+		agent=dueling_ddqn \
+		training.total_steps=2000 \
+		training.learning_starts=200 \
+		training.eval_freq=1000 \
+		training.eval_episodes=1 \
+		training.save_freq=1000 \
+		training.log_freq=500 \
+		replay.buffer_size=2000 \
+		wandb.enabled=false \
+		training.record_video=false \
+		device=$(DEVICE)
+	@echo ""
+	@echo "=== [4/5] Validating Rainbow-Lite (DDQN + Dueling + PER) ==="
+	PYTHONPATH=. $(PYTHON) -m mini_rainbow.scripts.train \
+		+experiment=stage2_rainbow_lite \
+		training.total_steps=2000 \
+		training.learning_starts=200 \
+		training.eval_freq=1000 \
+		training.eval_episodes=1 \
+		training.save_freq=1000 \
+		training.log_freq=500 \
+		replay.buffer_size=2000 \
+		wandb.enabled=false \
+		training.record_video=false \
+		device=$(DEVICE)
+	@echo ""
+	@echo "=== [5/5] Validating W&B logging ==="
+	PYTHONPATH=. $(PYTHON) -m mini_rainbow.scripts.train \
+		+experiment=stage1_dqn \
+		training.total_steps=500 \
+		training.learning_starts=100 \
+		training.eval_freq=250 \
+		training.eval_episodes=1 \
+		training.save_freq=500 \
+		training.log_freq=100 \
+		replay.buffer_size=1000 \
+		wandb.enabled=true \
+		training.record_video=false \
+		device=$(DEVICE)
+	@echo ""
+	@echo "=== ALL 5 VALIDATIONS PASSED ==="
+
 # ---------------------------------------------------------------------------
 # Evaluation
 # ---------------------------------------------------------------------------
@@ -195,6 +272,7 @@ help:
 	@echo "    make train-stage2         Stage 2: Rainbow-Lite (DDQN + Dueling + PER)"
 	@echo "    make train ARGS='...'     Train with custom Hydra overrides"
 	@echo "    make smoke-test           Quick 1000-step sanity check"
+	@echo "    make validate-all         Validate all 4 variants + W&B (~5 min)"
 	@echo ""
 	@echo "  Evaluation:"
 	@echo "    make eval CKPT=path       Evaluate a checkpoint"
@@ -217,7 +295,7 @@ help:
 	@echo "    make clean                Remove generated files"
 
 .PHONY: setup install install-all install-torch-cu126 install-torch-cu124 install-torch-cu121 install-torch-cu118 install-torch-cpu \
-        train-stage1 train-stage2 train smoke-test \
+        train-stage1 train-stage2 train smoke-test validate-all \
         eval serve health \
         docker-build docker-build-api docker-train docker-serve docker-push \
         lint format test clean help
