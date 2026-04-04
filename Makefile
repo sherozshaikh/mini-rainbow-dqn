@@ -91,7 +91,7 @@ smoke-test:
 ## Runs 2000 steps each: DQN, Double DQN, Dueling DDQN, Rainbow-Lite (PER).
 ## Then runs 500 steps with W&B enabled to verify logging works.
 ## Total time: ~5 minutes on A6000.
-validate-all:
+validate-all: clean
 	@echo "=== [1/5] Validating DQN (baseline) ==="
 	PYTHONPATH=. $(PYTHON) -m mini_rainbow.scripts.train \
 		+experiment=stage1_dqn \
