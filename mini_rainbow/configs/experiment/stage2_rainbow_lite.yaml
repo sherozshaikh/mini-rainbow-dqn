@@ -1,9 +1,9 @@
 # @package _global_
-# Stage 2: Double DQN + Dueling + PER
+# Stage 2: Double DQN + Dueling + PER (2M steps for comparison)
 defaults:
   - override /env: breakout
   - override /agent: rainbow_lite
-  - override /training: default
+  - override /training: stage2
   - override /replay: prioritized
 
 run_name: stage2_rainbow_lite
