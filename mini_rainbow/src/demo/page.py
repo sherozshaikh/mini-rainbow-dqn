@@ -158,7 +158,11 @@ function drawChart(name) {
     const h = c.height = 80;
     ctx.clearRect(0, 0, w, h);
     const pts = histories[name];
-    if (pts.length < 2) return;
+    if (pts.length < 2) {
+        ctx.fillStyle = '#484f58'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('Score history will appear after 2 episodes', w / 2, h / 2);
+        return;
+    }
     const mx = Math.max(...pts, 1);
     const step = w / (MAX_H - 1);
     const start = Math.max(0, pts.length - MAX_H);

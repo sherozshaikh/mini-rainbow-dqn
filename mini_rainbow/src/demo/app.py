@@ -92,6 +92,9 @@ def _make_agent_state(name: str) -> dict:
     }
 
 
+MAX_EPISODE_STEPS = 10000  # cap episodes to prevent infinite loops
+
+
 def _make_env() -> gym.Env:
     env = gym.make("ALE/Breakout-v5", frameskip=1, render_mode="rgb_array")
     return AtariPreprocessing(
@@ -122,6 +125,8 @@ def _game_loop() -> None:
     ep_counts = {name: 0 for name in agent_names}
     ep_starts = {name: time.time() for name in agent_names}
     dones = {name: True for name in agent_names}
+    prev_lives = {name: 5 for name in agent_names}
+    no_reward_steps = {name: 0 for name in agent_names}
 
     tick = 0
     while _running:
@@ -156,6 +161,12 @@ def _game_loop() -> None:
                 ep_counts[name] += 1
                 ep_starts[name] = time.time()
                 dones[name] = False
+                prev_lives[name] = 5
+                no_reward_steps[name] = 0
+
+                # Fire to start the game
+                raw, _, _, _, _ = env.step(1)
+                states[name] = stacker.step(raw)
 
             # Act
             with torch.no_grad():
@@ -165,8 +176,17 @@ def _game_loop() -> None:
                 q_list = qv.squeeze(0).cpu().tolist()
 
             raw, reward, term, trunc, _ = env.step(action)
-            dones[name] = term or trunc
             states[name] = stacker.step(raw)
+
+            # Detect life loss -> press FIRE to launch next ball
+            current_lives = env.unwrapped.ale.lives()
+            if current_lives < prev_lives[name] and not term:
+                raw, _, _, _, _ = env.step(1)  # FIRE
+                states[name] = stacker.step(raw)
+            prev_lives[name] = current_lives
+
+            # Cap episode length to prevent stuck agents
+            dones[name] = term or trunc or ep_steps[name] >= MAX_EPISODE_STEPS
             ep_rewards[name] += reward
             ep_steps[name] += 1
 
