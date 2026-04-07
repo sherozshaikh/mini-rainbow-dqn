@@ -170,6 +170,22 @@ health:
 	@curl -sf http://localhost:8000/health | python3 -m json.tool || echo "API not reachable"
 
 # ---------------------------------------------------------------------------
+# Demo (live agent playing in browser + Grafana dashboard)
+# ---------------------------------------------------------------------------
+
+## Run demo locally (agent plays Breakout in browser at http://localhost:8000)
+demo:
+	PYTHONPATH=. $(PYTHON) -m mini_rainbow.scripts.demo --checkpoint gdrive/checkpoints/stage1_dqn_best.pt
+
+## Start full demo stack: agent + Prometheus + Grafana (docker-compose)
+demo-stack:
+	docker compose up --build
+
+## Stop demo stack
+demo-stop:
+	docker compose down
+
+# ---------------------------------------------------------------------------
 # Docker
 # ---------------------------------------------------------------------------
 
@@ -181,6 +197,10 @@ docker-build:
 docker-build-api:
 	docker build -t $(IMAGE)-api:$(TAG) -f mini_rainbow/docker/Dockerfile.api .
 
+## Build demo Docker image (live agent + Prometheus metrics)
+docker-build-demo:
+	docker build -t $(IMAGE)-demo:$(TAG) -f mini_rainbow/docker/Dockerfile.demo .
+
 ## Run training in Docker
 docker-train:
 	docker run --rm --gpus all $(IMAGE):$(TAG) +experiment=stage1_dqn
@@ -189,10 +209,11 @@ docker-train:
 docker-serve:
 	docker run --rm -p 8000:8000 -v $(CKPT):/app/model.pt $(IMAGE)-api:$(TAG) --checkpoint /app/model.pt
 
-## Push images to Docker Hub
-docker-push: docker-build docker-build-api
+## Push all images to Docker Hub
+docker-push: docker-build docker-build-api docker-build-demo
 	docker push $(IMAGE):$(TAG)
 	docker push $(IMAGE)-api:$(TAG)
+	docker push $(IMAGE)-demo:$(TAG)
 
 # ---------------------------------------------------------------------------
 # Code Quality
@@ -262,6 +283,11 @@ help:
 	@echo "  Evaluation:"
 	@echo "    make eval CKPT=path       Evaluate a checkpoint"
 	@echo ""
+	@echo "  Demo:"
+	@echo "    make demo                 Run live demo locally (port 8000)"
+	@echo "    make demo-stack           Start full stack (demo + Prometheus + Grafana)"
+	@echo "    make demo-stop            Stop demo stack"
+	@echo ""
 	@echo "  API:"
 	@echo "    make serve CKPT=path      Start inference API server"
 	@echo "    make health               Health check running API"
@@ -269,6 +295,7 @@ help:
 	@echo "  Docker:"
 	@echo "    make docker-build         Build training image (core + video)"
 	@echo "    make docker-build-api     Build API image (core + api, smallest)"
+	@echo "    make docker-build-demo    Build demo image (live agent)"
 	@echo "    make docker-train         Run training in Docker"
 	@echo "    make docker-serve CKPT=p  Run API in Docker"
 	@echo "    make docker-push          Build and push all images"
@@ -282,5 +309,6 @@ help:
 .PHONY: setup install install-all install-torch-cu126 install-torch-cu124 install-torch-cu121 install-torch-cu118 install-torch-cpu \
         train-stage1 train-stage2 train smoke-test validate-all \
         eval serve health \
-        docker-build docker-build-api docker-train docker-serve docker-push \
+        demo demo-stack demo-stop \
+        docker-build docker-build-api docker-build-demo docker-train docker-serve docker-push \
         lint format test clean help

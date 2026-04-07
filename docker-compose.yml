@@ -1,0 +1,35 @@
+services:
+  demo:
+    build:
+      context: .
+      dockerfile: mini_rainbow/docker/Dockerfile.demo
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./gdrive/checkpoints/stage1_dqn_best.pt:/app/checkpoint_best.pt:ro
+    environment:
+      - CHECKPOINT_PATH=/app/checkpoint_best.pt
+      - DUELING=false
+      - DEVICE=cpu
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./mini_rainbow/docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - demo
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=minirainbow
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+    volumes:
+      - ./mini_rainbow/docker/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus

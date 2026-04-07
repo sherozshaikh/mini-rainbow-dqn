@@ -215,11 +215,20 @@ outputs/
 eval_videos/
 wandb/
 
+# GDrive upload folder (large checkpoints + videos)
+gdrive/
+
+# Old backups
+old_backup/
+
 # Project venv
 .venv_mini_rainbow/
 
 # Reference files (not part of codebase)
 *_reference*
+
+# Scratch test files
+test_*.py
 
 # OS
 .DS_Store

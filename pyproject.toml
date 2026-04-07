@@ -20,10 +20,11 @@ dependencies = [
 [project.optional-dependencies]
 # W&B experiment tracking (training only, graceful fallback if missing)
 wandb = ["wandb>=0.16.0"]
-# Inference API server
+# Inference API server + demo
 api = [
     "fastapi>=0.109.0",
     "uvicorn[standard]>=0.27.0",
+    "Pillow>=10.0.0",
 ]
 # Evaluation video recording
 video = ["moviepy>=1.0.3,<2.0.0"]
