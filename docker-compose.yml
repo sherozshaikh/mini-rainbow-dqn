@@ -5,11 +5,7 @@ services:
       dockerfile: mini_rainbow/docker/Dockerfile.demo
     ports:
       - "8000:8000"
-    volumes:
-      - ./gdrive/checkpoints/stage1_dqn_best.pt:/app/checkpoint_best.pt:ro
     environment:
-      - CHECKPOINT_PATH=/app/checkpoint_best.pt
-      - DUELING=false
       - DEVICE=cpu
 
   prometheus:

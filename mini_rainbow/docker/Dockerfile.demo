@@ -1,27 +1,37 @@
 FROM python:3.11-slim
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
+# System deps: minimal
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1-mesa-glx \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv (fast pip replacement)
+RUN pip install --no-cache-dir uv
+
+# Deps layer (cached unless pyproject.toml changes)
 COPY pyproject.toml README.md ./
-COPY mini_rainbow/ ./mini_rainbow/
+RUN uv pip install --system --no-cache ".[api]" Pillow
 
-# Install PyTorch CPU (smallest footprint for inference demo)
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+# Install PyTorch CPU (smallest footprint for inference)
+RUN uv pip install --system --no-cache torch --index-url https://download.pytorch.org/whl/cpu
 
-# Install core + API deps + Pillow for frame rendering
-RUN pip install --no-cache-dir -e ".[api]" Pillow
+# Application code (selective copy, no tests/configs/scripts bloat)
+COPY mini_rainbow/src/ ./mini_rainbow/src/
+COPY mini_rainbow/__init__.py ./mini_rainbow/
+COPY mini_rainbow/scripts/demo.py ./mini_rainbow/scripts/
+COPY mini_rainbow/scripts/__init__.py ./mini_rainbow/scripts/
 
-# Copy checkpoint (must be provided at build time or mounted at runtime)
-# Default: expects checkpoint at /app/checkpoint_best.pt
-ENV CHECKPOINT_PATH=/app/checkpoint_best.pt
-ENV DUELING=false
+# Bake checkpoints into image (no volume mounts needed)
+COPY gdrive/checkpoints/stage1_dqn_best.pt ./checkpoints/stage1_dqn_best.pt
+COPY gdrive/checkpoints/stage2_rainbow_lite_best.pt ./checkpoints/stage2_rainbow_lite_best.pt
+
+ENV PYTHONPATH=/app
+ENV DQN_CHECKPOINT=/app/checkpoints/stage1_dqn_best.pt
+ENV RAINBOW_CHECKPOINT=/app/checkpoints/stage2_rainbow_lite_best.pt
 ENV DEVICE=cpu
 
 EXPOSE 8000
 
-ENTRYPOINT ["python", "-m", "mini_rainbow.scripts.demo"]
-CMD ["--checkpoint", "/app/checkpoint_best.pt"]
+CMD ["python", "-m", "mini_rainbow.scripts.demo", "--checkpoint", "/app/checkpoints/stage1_dqn_best.pt"]

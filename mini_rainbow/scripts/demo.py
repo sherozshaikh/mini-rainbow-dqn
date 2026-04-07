@@ -18,16 +18,26 @@ logger = logging.getLogger(__name__)
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Start live DQN demo server")
-    parser.add_argument("--checkpoint", type=str, required=True, help="Path to checkpoint .pt")
-    parser.add_argument("--dueling", action="store_true", help="Use dueling network")
+    parser.add_argument(
+        "--dqn-checkpoint",
+        type=str,
+        default="gdrive/checkpoints/stage1_dqn_best.pt",
+        help="Path to DQN checkpoint",
+    )
+    parser.add_argument(
+        "--rainbow-checkpoint",
+        type=str,
+        default="gdrive/checkpoints/stage2_rainbow_lite_best.pt",
+        help="Path to Rainbow-Lite checkpoint",
+    )
     parser.add_argument("--device", type=str, default="cpu", help="Device: cpu|cuda")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="Server host")
     parser.add_argument("--port", type=int, default=8000, help="Server port")
     args = parser.parse_args()
 
     # Pass config via environment (picked up by app.startup)
-    os.environ["CHECKPOINT_PATH"] = args.checkpoint
-    os.environ["DUELING"] = str(args.dueling).lower()
+    os.environ["DQN_CHECKPOINT"] = args.dqn_checkpoint
+    os.environ["RAINBOW_CHECKPOINT"] = args.rainbow_checkpoint
     os.environ["DEVICE"] = args.device
 
     from mini_rainbow.src.demo.app import app

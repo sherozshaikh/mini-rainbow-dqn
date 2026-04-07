@@ -173,9 +173,11 @@ health:
 # Demo (live agent playing in browser + Grafana dashboard)
 # ---------------------------------------------------------------------------
 
-## Run demo locally (agent plays Breakout in browser at http://localhost:8000)
+## Run demo locally: DQN vs Rainbow-Lite side-by-side (http://localhost:8000)
 demo:
-	PYTHONPATH=. $(PYTHON) -m mini_rainbow.scripts.demo --checkpoint gdrive/checkpoints/stage1_dqn_best.pt
+	PYTHONPATH=. $(PYTHON) -m mini_rainbow.scripts.demo \
+		--dqn-checkpoint gdrive/checkpoints/stage1_dqn_best.pt \
+		--rainbow-checkpoint gdrive/checkpoints/stage2_rainbow_lite_best.pt
 
 ## Start full demo stack: agent + Prometheus + Grafana (docker-compose)
 demo-stack:
