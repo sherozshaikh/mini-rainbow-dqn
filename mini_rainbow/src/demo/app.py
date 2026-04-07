@@ -319,9 +319,9 @@ def health():
 
 @app.post("/speed/{multiplier}")
 def set_speed(multiplier: float):
-    """Set game speed: 1, 2, 5, or 10."""
+    """Set game speed multiplier."""
     global _speed
-    _speed = max(1.0, min(multiplier, 10.0))
+    _speed = max(1.0, min(multiplier, 50.0))
     logger.info(f"Speed set to {_speed}x")
     return {"speed": _speed}
 
