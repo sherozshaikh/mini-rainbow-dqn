@@ -91,6 +91,8 @@ def _make_agent_state(name: str) -> dict:
         "recent_scores": [],
         "best_score": 0.0,
         "action_counts": [0, 0, 0, 0],  # NOOP, FIRE, RIGHT, LEFT
+        "lives": 5,
+        "balls_lost": 0,
     }
 
 
@@ -166,9 +168,11 @@ def _game_loop() -> None:
                 prev_lives[name] = 5
                 no_reward_steps[name] = 0
 
-                # Reset action counts for new episode
+                # Reset per-episode counters
                 with _lock:
                     _agents[name]["action_counts"] = [0, 0, 0, 0]
+                    _agents[name]["lives"] = 5
+                    _agents[name]["balls_lost"] = 0
 
                 # Fire to start the game
                 raw, _, _, _, _ = env.step(1)
@@ -187,6 +191,9 @@ def _game_loop() -> None:
             # Detect life loss -> press FIRE to launch next ball
             current_lives = env.unwrapped.ale.lives()
             if current_lives < prev_lives[name] and not term:
+                with _lock:
+                    _agents[name]["balls_lost"] += 1
+                    _agents[name]["lives"] = current_lives
                 raw, _, _, _, _ = env.step(1)  # FIRE
                 states[name] = stacker.step(raw)
             prev_lives[name] = current_lives
@@ -293,6 +300,8 @@ def stream():
                         "best_score": a["best_score"],
                         "recent_scores": list(a["recent_scores"]),
                         "action_counts": a["action_counts"],
+                        "lives": a["lives"],
+                        "balls_lost": a["balls_lost"],
                     }
             payload["_speed"] = _speed
             yield f"data: {json.dumps(payload)}\n\n"

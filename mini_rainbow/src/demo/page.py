@@ -48,7 +48,7 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe
 .score-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
 
 /* Stat cards */
-.cards { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:10px 12px; }
+.cards { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:10px 12px; }
 .card { background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:10px 12px; }
 .card .lbl { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
 .card .val { font-size:20px; font-weight:700; margin-top:2px; }
@@ -110,6 +110,7 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe
             <div class="card"><div class="lbl">Episode</div><div class="val b" id="ep-DQN">0</div></div>
             <div class="card"><div class="lbl">Avg (10 ep)</div><div class="val g" id="avg-DQN">0</div></div>
             <div class="card"><div class="lbl">Best</div><div class="val o" id="best-DQN">0</div></div>
+            <div class="card"><div class="lbl">Lives / Lost</div><div class="val" id="lives-DQN" style="font-size:16px;">5 / 0</div></div>
         </div>
         <div class="section">
             <div class="section-title">Q-Values</div>
@@ -147,6 +148,7 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe
             <div class="card"><div class="lbl">Episode</div><div class="val b" id="ep-Rainbow-Lite">0</div></div>
             <div class="card"><div class="lbl">Avg (10 ep)</div><div class="val g" id="avg-Rainbow-Lite">0</div></div>
             <div class="card"><div class="lbl">Best</div><div class="val o" id="best-Rainbow-Lite">0</div></div>
+            <div class="card"><div class="lbl">Lives / Lost</div><div class="val" id="lives-Rainbow-Lite" style="font-size:16px;">5 / 0</div></div>
         </div>
         <div class="section">
             <div class="section-title">Q-Values</div>
@@ -195,6 +197,14 @@ function updateAgent(name, d) {
 
     const best = document.getElementById('best-' + name);
     if (best) best.textContent = d.best_score;
+
+    const lives = document.getElementById('lives-' + name);
+    if (lives && d.lives !== undefined) {
+        const l = d.lives;
+        const bl = d.balls_lost || 0;
+        lives.textContent = l + ' / ' + bl;
+        lives.style.color = l >= 4 ? 'var(--green)' : l >= 2 ? 'var(--orange)' : 'var(--red)';
+    }
 
     // Q-values
     if (d.q_values && d.q_values.length === 4) {

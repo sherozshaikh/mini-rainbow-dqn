@@ -191,31 +191,17 @@ demo-stop:
 # Docker
 # ---------------------------------------------------------------------------
 
-## Build training Docker image (core + video, no API/wandb)
+## Build platform image (live agent + metrics, baked checkpoints)
 docker-build:
-	docker build -t $(IMAGE):$(TAG) -f mini_rainbow/docker/Dockerfile .
+	docker build -t $(IMAGE):$(TAG) -f mini_rainbow/docker/Dockerfile.demo .
 
-## Build API Docker image (core + api only, smallest footprint)
-docker-build-api:
-	docker build -t $(IMAGE)-api:$(TAG) -f mini_rainbow/docker/Dockerfile.api .
+## Run platform locally
+docker-run:
+	docker run --rm -p 8000:8000 $(IMAGE):$(TAG)
 
-## Build demo Docker image (live agent + Prometheus metrics)
-docker-build-demo:
-	docker build -t $(IMAGE)-demo:$(TAG) -f mini_rainbow/docker/Dockerfile.demo .
-
-## Run training in Docker
-docker-train:
-	docker run --rm --gpus all $(IMAGE):$(TAG) +experiment=stage1_dqn
-
-## Run API in Docker (e.g. make docker-serve CKPT=/path/to/checkpoint.pt)
-docker-serve:
-	docker run --rm -p 8000:8000 -v $(CKPT):/app/model.pt $(IMAGE)-api:$(TAG) --checkpoint /app/model.pt
-
-## Push all images to Docker Hub
-docker-push: docker-build docker-build-api docker-build-demo
+## Push image to Docker Hub
+docker-push: docker-build
 	docker push $(IMAGE):$(TAG)
-	docker push $(IMAGE)-api:$(TAG)
-	docker push $(IMAGE)-demo:$(TAG)
 
 # ---------------------------------------------------------------------------
 # Code Quality
@@ -295,12 +281,9 @@ help:
 	@echo "    make health               Health check running API"
 	@echo ""
 	@echo "  Docker:"
-	@echo "    make docker-build         Build training image (core + video)"
-	@echo "    make docker-build-api     Build API image (core + api, smallest)"
-	@echo "    make docker-build-demo    Build demo image (live agent)"
-	@echo "    make docker-train         Run training in Docker"
-	@echo "    make docker-serve CKPT=p  Run API in Docker"
-	@echo "    make docker-push          Build and push all images"
+	@echo "    make docker-build         Build platform image"
+	@echo "    make docker-run           Run platform locally (port 8000)"
+	@echo "    make docker-push          Build and push to Docker Hub"
 	@echo ""
 	@echo "  Code Quality:"
 	@echo "    make lint                 Lint with ruff"
@@ -312,5 +295,5 @@ help:
         train-stage1 train-stage2 train smoke-test validate-all \
         eval serve health \
         demo demo-stack demo-stop \
-        docker-build docker-build-api docker-build-demo docker-train docker-serve docker-push \
+        docker-build docker-run docker-push \
         lint format test clean help
