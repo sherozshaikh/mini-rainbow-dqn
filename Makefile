@@ -187,6 +187,10 @@ up:
 down:
 	docker compose down
 
+## Show running containers
+ps:
+	docker compose ps
+
 # ---------------------------------------------------------------------------
 # Docker
 # ---------------------------------------------------------------------------
@@ -275,6 +279,7 @@ help:
 	@echo "    make run                  Run platform locally (port 8000)"
 	@echo "    make up                   Start full stack (platform + Prometheus + Grafana)"
 	@echo "    make down                 Stop all services"
+	@echo "    make ps                   Show running containers"
 	@echo ""
 	@echo "  API:"
 	@echo "    make serve CKPT=path      Start inference API server"
@@ -294,6 +299,6 @@ help:
 .PHONY: setup install install-all install-torch-cu126 install-torch-cu124 install-torch-cu121 install-torch-cu118 install-torch-cpu \
         train-stage1 train-stage2 train smoke-test validate-all \
         eval serve health \
-        run up down \
+        run up down ps \
         docker-build docker-run docker-push \
         lint format test clean help
