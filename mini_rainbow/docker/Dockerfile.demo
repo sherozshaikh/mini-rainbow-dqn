@@ -8,17 +8,15 @@ RUN pip install --no-cache-dir uv
 # Install PyTorch CPU first (largest layer, cached across builds)
 RUN uv pip install --system --no-cache torch --index-url https://download.pytorch.org/whl/cpu
 
-# Install API deps without building the project itself
+# Install deps (ale-py>=0.10 bundles ROMs, no autorom needed)
 RUN uv pip install --system --no-cache \
-    "gymnasium[atari,other]>=1.0.0,<2.0.0" \
+    "gymnasium[atari]>=1.0.0,<2.0.0" \
     "ale-py>=0.10.0" \
-    "numpy>=1.24.0" \
     "opencv-python-headless>=4.8.0" \
+    "numpy>=1.24.0" \
     "fastapi>=0.109.0" \
     "uvicorn[standard]>=0.27.0" \
     "Pillow>=10.0.0" \
-    "autorom>=0.6.0" \
-    && AutoROM --accept-license \
     && python -c "import cv2; print('cv2 OK')" \
     && python -c "import ale_py; print('ALE OK')"
 
