@@ -43,6 +43,7 @@ _models: dict[str, torch.nn.Module] = {}
 _agents: dict[str, dict] = {}
 _lock = threading.Lock()
 _running = False
+_speed: float = 1.0  # 1x, 2x, 5x, 10x
 
 
 # ---------------------------------------------------------------------------
@@ -89,6 +90,7 @@ def _make_agent_state(name: str) -> dict:
         "aps": 0.0,
         "recent_scores": [],
         "best_score": 0.0,
+        "action_counts": [0, 0, 0, 0],  # NOOP, FIRE, RIGHT, LEFT
     }
 
 
@@ -164,6 +166,10 @@ def _game_loop() -> None:
                 prev_lives[name] = 5
                 no_reward_steps[name] = 0
 
+                # Reset action counts for new episode
+                with _lock:
+                    _agents[name]["action_counts"] = [0, 0, 0, 0]
+
                 # Fire to start the game
                 raw, _, _, _, _ = env.step(1)
                 states[name] = stacker.step(raw)
@@ -207,9 +213,10 @@ def _game_loop() -> None:
                     a["step"] = ep_steps[name]
                     a["total_episodes"] = ep_counts[name]
                     a["total_steps"] += 1
+                    a["action_counts"][action] += 1
 
         tick += 1
-        time.sleep(1 / 30)  # 30 ticks/sec total, 15 per agent
+        time.sleep(1 / (30 * _speed))  # speed-adjusted tick rate
 
     for env in envs.values():
         env.close()
@@ -285,7 +292,9 @@ def stream():
                         "total_reward": round(a["total_reward"], 0),
                         "best_score": a["best_score"],
                         "recent_scores": list(a["recent_scores"]),
+                        "action_counts": a["action_counts"],
                     }
+            payload["_speed"] = _speed
             yield f"data: {json.dumps(payload)}\n\n"
             time.sleep(1 / 15)
 
@@ -306,6 +315,15 @@ def health():
             agents_loaded=list(_models.keys()),
             total_episodes={n: a["total_episodes"] for n, a in _agents.items()},
         )
+
+
+@app.post("/speed/{multiplier}")
+def set_speed(multiplier: float):
+    """Set game speed: 1, 2, 5, or 10."""
+    global _speed
+    _speed = max(1.0, min(multiplier, 10.0))
+    logger.info(f"Speed set to {_speed}x")
+    return {"speed": _speed}
 
 
 @app.get("/metrics")

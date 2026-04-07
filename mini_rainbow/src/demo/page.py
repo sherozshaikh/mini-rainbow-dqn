@@ -19,25 +19,30 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe
 .hdr { background:var(--bg2); border-bottom:1px solid var(--border); padding:10px 24px; display:flex; align-items:center; gap:12px; }
 .hdr h1 { font-size:17px; color:var(--blue); font-weight:600; }
 .hdr .badge { background:#238636; color:#fff; font-size:10px; padding:2px 8px; border-radius:10px; font-weight:600; }
-.hdr .sub { font-size:12px; color:var(--muted); margin-left:auto; }
+.hdr .sub { font-size:12px; color:var(--muted); }
+.hdr .spacer { flex:1; }
 
-/* Main layout: two game columns + bottom metrics */
+/* Speed controls */
+.speed-bar { display:flex; align-items:center; gap:6px; }
+.speed-bar span { font-size:11px; color:var(--muted); }
+.speed-btn { background:var(--bg); border:1px solid var(--border); color:var(--muted); padding:3px 10px; border-radius:4px; font-size:12px; cursor:pointer; font-family:inherit; }
+.speed-btn:hover { border-color:var(--blue); color:var(--text); }
+.speed-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+
+/* Main layout */
 .main { display:grid; grid-template-columns:1fr 1fr; gap:0; height:calc(100vh - 45px); }
 
-/* Each agent column */
+/* Agent column */
 .agent-col { border-right:1px solid var(--border); display:flex; flex-direction:column; overflow-y:auto; }
 .agent-col:last-child { border-right:none; }
 
-/* Agent header */
 .agent-hdr { background:var(--bg2); border-bottom:1px solid var(--border); padding:8px 16px; display:flex; align-items:center; gap:8px; }
 .agent-hdr .name { font-size:14px; font-weight:600; }
 .agent-hdr .arch { font-size:11px; color:var(--muted); background:var(--bg); padding:2px 6px; border-radius:3px; border:1px solid var(--border); }
 
-/* Game area */
 .game-area { display:flex; align-items:center; justify-content:center; padding:12px; background:#000; }
 .game-area img { border-radius:4px; image-rendering:pixelated; }
 
-/* Score banner */
 .score-row { display:flex; justify-content:center; align-items:baseline; gap:8px; padding:6px 0; background:var(--bg2); border-bottom:1px solid var(--border); }
 .score-big { font-size:32px; font-weight:700; }
 .score-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
@@ -52,8 +57,8 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe
 .card .val.o { color:var(--orange); }
 
 /* Q-values */
-.q-section { padding:8px 12px; }
-.q-title { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; border-bottom:1px solid var(--border); padding-bottom:4px; }
+.section { padding:8px 12px; }
+.section-title { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; border-bottom:1px solid var(--border); padding-bottom:4px; }
 .q-row { display:flex; align-items:center; gap:6px; margin:4px 0; }
 .q-lbl { width:44px; font-size:11px; color:var(--muted); text-align:right; }
 .q-track { flex:1; height:16px; background:#21262d; border-radius:3px; overflow:hidden; }
@@ -62,9 +67,12 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe
 .q-fill.other { background:#30363d; }
 .q-num { width:60px; font-size:11px; color:var(--text); font-family:'Courier New',monospace; text-align:right; }
 
-/* Mini chart */
-.chart-wrap { padding:8px 12px; }
-.chart-wrap canvas { width:100%; height:80px; display:block; background:var(--bg2); border:1px solid var(--border); border-radius:4px; }
+/* Action distribution */
+.action-row { display:flex; align-items:center; gap:6px; margin:3px 0; }
+.action-lbl { width:44px; font-size:11px; color:var(--muted); text-align:right; }
+.action-track { flex:1; height:14px; background:#21262d; border-radius:3px; overflow:hidden; }
+.action-fill { height:100%; border-radius:3px; transition:width .3s ease; }
+.action-pct { width:40px; font-size:11px; color:var(--muted); font-family:'Courier New',monospace; text-align:right; }
 
 /* Footer */
 .ftr { padding:8px 12px; font-size:10px; color:var(--dim); display:flex; gap:12px; flex-wrap:wrap; }
@@ -77,6 +85,14 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe
     <h1>Mini-Rainbow DQN</h1>
     <span class="badge">LIVE</span>
     <span class="sub">Side-by-side comparison &mdash; ALE/Breakout-v5</span>
+    <span class="spacer"></span>
+    <div class="speed-bar">
+        <span>Speed:</span>
+        <button class="speed-btn active" onclick="setSpeed(1)">1x</button>
+        <button class="speed-btn" onclick="setSpeed(2)">2x</button>
+        <button class="speed-btn" onclick="setSpeed(5)">5x</button>
+        <button class="speed-btn" onclick="setSpeed(10)">10x</button>
+    </div>
 </div>
 
 <div class="main">
@@ -96,14 +112,20 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe
             <div class="card"><div class="lbl">Avg (10 ep)</div><div class="val g" id="avg-DQN">0</div></div>
             <div class="card"><div class="lbl">Best</div><div class="val o" id="best-DQN">0</div></div>
         </div>
-        <div class="q-section">
-            <div class="q-title">Q-Values</div>
+        <div class="section">
+            <div class="section-title">Q-Values</div>
             <div class="q-row"><span class="q-lbl">NOOP</span><div class="q-track"><div class="q-fill other" id="q-DQN-0"></div></div><span class="q-num" id="qv-DQN-0">0</span></div>
             <div class="q-row"><span class="q-lbl">FIRE</span><div class="q-track"><div class="q-fill other" id="q-DQN-1"></div></div><span class="q-num" id="qv-DQN-1">0</span></div>
             <div class="q-row"><span class="q-lbl">RIGHT</span><div class="q-track"><div class="q-fill other" id="q-DQN-2"></div></div><span class="q-num" id="qv-DQN-2">0</span></div>
             <div class="q-row"><span class="q-lbl">LEFT</span><div class="q-track"><div class="q-fill other" id="q-DQN-3"></div></div><span class="q-num" id="qv-DQN-3">0</span></div>
         </div>
-        <div class="chart-wrap"><canvas id="chart-DQN" height="80"></canvas></div>
+        <div class="section">
+            <div class="section-title">Action Distribution (this episode)</div>
+            <div class="action-row"><span class="action-lbl">NOOP</span><div class="action-track"><div class="action-fill" id="ad-DQN-0" style="width:0%;background:var(--dim);"></div></div><span class="action-pct" id="ap-DQN-0">0%</span></div>
+            <div class="action-row"><span class="action-lbl">FIRE</span><div class="action-track"><div class="action-fill" id="ad-DQN-1" style="width:0%;background:var(--red);"></div></div><span class="action-pct" id="ap-DQN-1">0%</span></div>
+            <div class="action-row"><span class="action-lbl">RIGHT</span><div class="action-track"><div class="action-fill" id="ad-DQN-2" style="width:0%;background:var(--blue);"></div></div><span class="action-pct" id="ap-DQN-2">0%</span></div>
+            <div class="action-row"><span class="action-lbl">LEFT</span><div class="action-track"><div class="action-fill" id="ad-DQN-3" style="width:0%;background:var(--green);"></div></div><span class="action-pct" id="ap-DQN-3">0%</span></div>
+        </div>
         <div class="ftr">
             <span>CNN: 3-conv + 2-fc</span>
             <span>Replay: Uniform</span>
@@ -127,14 +149,20 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe
             <div class="card"><div class="lbl">Avg (10 ep)</div><div class="val g" id="avg-Rainbow-Lite">0</div></div>
             <div class="card"><div class="lbl">Best</div><div class="val o" id="best-Rainbow-Lite">0</div></div>
         </div>
-        <div class="q-section">
-            <div class="q-title">Q-Values</div>
+        <div class="section">
+            <div class="section-title">Q-Values</div>
             <div class="q-row"><span class="q-lbl">NOOP</span><div class="q-track"><div class="q-fill other" id="q-Rainbow-Lite-0"></div></div><span class="q-num" id="qv-Rainbow-Lite-0">0</span></div>
             <div class="q-row"><span class="q-lbl">FIRE</span><div class="q-track"><div class="q-fill other" id="q-Rainbow-Lite-1"></div></div><span class="q-num" id="qv-Rainbow-Lite-1">0</span></div>
             <div class="q-row"><span class="q-lbl">RIGHT</span><div class="q-track"><div class="q-fill other" id="q-Rainbow-Lite-2"></div></div><span class="q-num" id="qv-Rainbow-Lite-2">0</span></div>
             <div class="q-row"><span class="q-lbl">LEFT</span><div class="q-track"><div class="q-fill other" id="q-Rainbow-Lite-3"></div></div><span class="q-num" id="qv-Rainbow-Lite-3">0</span></div>
         </div>
-        <div class="chart-wrap"><canvas id="chart-Rainbow-Lite" height="80"></canvas></div>
+        <div class="section">
+            <div class="section-title">Action Distribution (this episode)</div>
+            <div class="action-row"><span class="action-lbl">NOOP</span><div class="action-track"><div class="action-fill" id="ad-Rainbow-Lite-0" style="width:0%;background:var(--dim);"></div></div><span class="action-pct" id="ap-Rainbow-Lite-0">0%</span></div>
+            <div class="action-row"><span class="action-lbl">FIRE</span><div class="action-track"><div class="action-fill" id="ad-Rainbow-Lite-1" style="width:0%;background:var(--red);"></div></div><span class="action-pct" id="ap-Rainbow-Lite-1">0%</span></div>
+            <div class="action-row"><span class="action-lbl">RIGHT</span><div class="action-track"><div class="action-fill" id="ad-Rainbow-Lite-2" style="width:0%;background:var(--blue);"></div></div><span class="action-pct" id="ap-Rainbow-Lite-2">0%</span></div>
+            <div class="action-row"><span class="action-lbl">LEFT</span><div class="action-track"><div class="action-fill" id="ad-Rainbow-Lite-3" style="width:0%;background:var(--green);"></div></div><span class="action-pct" id="ap-Rainbow-Lite-3">0%</span></div>
+        </div>
         <div class="ftr">
             <span>Dueling CNN: V(s) + A(s,a)</span>
             <span>Replay: PER (alpha=0.6)</span>
@@ -145,53 +173,12 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe
 
 <script>
 const agents = ['DQN', 'Rainbow-Lite'];
-const colors = {'DQN': '#58a6ff', 'Rainbow-Lite': '#3fb950'};
-const histories = {'DQN': [], 'Rainbow-Lite': []};
-const lastEp = {'DQN': 0, 'Rainbow-Lite': 0};
-const MAX_H = 50;
 
-function drawChart(name) {
-    const c = document.getElementById('chart-' + name);
-    if (!c) return;
-    const ctx = c.getContext('2d');
-    const w = c.width = c.offsetWidth;
-    const h = c.height = 80;
-    ctx.clearRect(0, 0, w, h);
-    const pts = histories[name];
-    if (pts.length < 2) {
-        ctx.fillStyle = '#484f58'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('Score history will appear after 2 episodes', w / 2, h / 2);
-        return;
-    }
-    const mx = Math.max(...pts, 1);
-    const step = w / (MAX_H - 1);
-    const start = Math.max(0, pts.length - MAX_H);
-
-    // Grid
-    ctx.strokeStyle = '#21262d'; ctx.lineWidth = 1;
-    for (let y = 20; y < h; y += 20) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
-
-    // Line
-    ctx.beginPath(); ctx.strokeStyle = colors[name]; ctx.lineWidth = 2;
-    for (let i = start; i < pts.length; i++) {
-        const x = (i - start) * step;
-        const y = h - (pts[i] / mx) * (h - 8) - 4;
-        i === start ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-
-    // Fill
-    ctx.lineTo((pts.length - 1 - start) * step, h);
-    ctx.lineTo(0, h);
-    ctx.closePath();
-    const col = colors[name];
-    ctx.fillStyle = col.replace(')', ',0.07)').replace('rgb', 'rgba').replace('#', '');
-    // Simpler: just use a semi-transparent version
-    ctx.fillStyle = name === 'DQN' ? 'rgba(88,166,255,0.07)' : 'rgba(63,185,80,0.07)';
-    ctx.fill();
-
-    ctx.fillStyle = '#8b949e'; ctx.font = '9px monospace';
-    ctx.fillText(mx.toFixed(0), 3, 10);
+function setSpeed(s) {
+    fetch('/speed/' + s, {method:'POST'});
+    document.querySelectorAll('.speed-btn').forEach(b => {
+        b.classList.toggle('active', b.textContent === s + 'x');
+    });
 }
 
 function updateAgent(name, d) {
@@ -224,11 +211,17 @@ function updateAgent(name, d) {
         }
     }
 
-    // Chart
-    if (d.episode > lastEp[name] && d.recent_scores && d.recent_scores.length > 0) {
-        lastEp[name] = d.episode;
-        histories[name].push(d.recent_scores[d.recent_scores.length - 1]);
-        drawChart(name);
+    // Action distribution
+    if (d.action_counts && d.action_counts.length === 4) {
+        const ac = d.action_counts;
+        const total = ac.reduce((a, b) => a + b, 0) || 1;
+        for (let i = 0; i < 4; i++) {
+            const pct = (ac[i] / total * 100);
+            const bar = document.getElementById('ad-' + name + '-' + i);
+            if (bar) bar.style.width = pct + '%';
+            const lbl = document.getElementById('ap-' + name + '-' + i);
+            if (lbl) lbl.textContent = pct.toFixed(0) + '%';
+        }
     }
 }
 
@@ -239,8 +232,6 @@ src.onmessage = function(e) {
         if (data[name]) updateAgent(name, data[name]);
     }
 };
-
-window.addEventListener('resize', () => agents.forEach(drawChart));
 </script>
 </body>
 </html>"""
