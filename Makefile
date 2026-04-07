@@ -197,7 +197,7 @@ ps:
 
 ## Build platform image (live agent + metrics, baked checkpoints)
 docker-build:
-	docker build -t $(IMAGE):$(TAG) -f mini_rainbow/docker/Dockerfile .
+	docker buildx build --platform linux/amd64 -t $(IMAGE):$(TAG) -f mini_rainbow/docker/Dockerfile --load .
 
 ## Run platform locally
 docker-run:
