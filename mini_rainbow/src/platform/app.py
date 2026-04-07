@@ -25,9 +25,9 @@ from gymnasium.wrappers import AtariPreprocessing
 from PIL import Image
 from pydantic import BaseModel
 
-from mini_rainbow.src.platform.page import HTML_PAGE
 from mini_rainbow.src.networks.dueling_q_network import DuelingQNetwork
 from mini_rainbow.src.networks.q_network import QNetwork
+from mini_rainbow.src.platform.page import HTML_PAGE
 from mini_rainbow.src.utils.checkpoint import load_checkpoint
 
 logger = logging.getLogger(__name__)

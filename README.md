@@ -316,6 +316,9 @@ make clean                Remove generated files
 ### Platform -- DQN vs Rainbow-Lite Side-by-Side
 ![Platform UI](docs/screenshots/platform_ui.png)
 
+### W&B -- Eval Reward (Stage 1 DQN vs Stage 2 Rainbow-Lite)
+![W&B Eval Reward](docs/screenshots/wandb_eval_reward.png)
+
 ### Grafana -- Monitoring Dashboard
 ![Grafana Dashboard](docs/screenshots/grafana_dashboard.png)
 
