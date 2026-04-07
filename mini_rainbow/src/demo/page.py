@@ -81,8 +81,6 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe
 .ep-table th { text-align:left; color:var(--muted); font-weight:normal; text-transform:uppercase; font-size:10px; letter-spacing:0.5px; padding:4px 8px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--bg2); }
 .ep-table td { padding:3px 8px; border-bottom:1px solid #21262d; }
 .ep-log-empty { font-size:11px; color:var(--dim); padding:8px 0; }
-.ep-row-dqn td { color:var(--blue); }
-.ep-row-rl td { color:var(--green); }
 
 /* Footer */
 .ftr { padding:8px 12px; font-size:10px; color:var(--dim); display:flex; gap:12px; flex-wrap:wrap; }
@@ -187,7 +185,14 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe
     <div class="section-title" style="padding:8px 16px 4px;">Episode Log</div>
     <div class="combined-log-wrap">
         <table class="ep-table" id="combined-elog">
-            <thead><tr><th>Agent</th><th>#</th><th>Score</th><th>Steps</th><th>Lost</th></tr></thead>
+            <thead><tr>
+                <th rowspan="2" style="vertical-align:bottom;">#</th>
+                <th colspan="2" style="text-align:center;color:var(--blue);border-bottom:none;">DQN</th>
+                <th colspan="2" style="text-align:center;color:var(--green);border-bottom:none;">Rainbow-Lite</th>
+            </tr><tr>
+                <th>Score</th><th>Lost</th>
+                <th>Score</th><th>Lost</th>
+            </tr></thead>
             <tbody id="combined-elog-body"><tr><td colspan="5" class="ep-log-empty">Waiting for first episode to complete...</td></tr></tbody>
         </table>
     </div>
@@ -255,9 +260,8 @@ function updateAgent(name, d) {
     }
 }
 
-// Combined episode log
-const allLogs = [];  // [{agent, ep, score, steps, balls_lost, _seq}]
-let logSeq = 0;
+// Combined episode log: one row per episode number, both agents side by side
+const epData = {};  // {ep_num: {dqn: {score, lost}, rl: {score, lost}}}
 const lastLogLen = {'DQN': 0, 'Rainbow-Lite': 0};
 
 function updateCombinedLog(data) {
@@ -267,16 +271,11 @@ function updateCombinedLog(data) {
         if (!d || !d.episode_log) continue;
         const log = d.episode_log;
         if (log.length > lastLogLen[name]) {
-            // New episodes completed
             for (let i = lastLogLen[name]; i < log.length; i++) {
-                allLogs.push({
-                    agent: name,
-                    ep: log[i].ep,
-                    score: log[i].score,
-                    steps: log[i].steps,
-                    balls_lost: log[i].balls_lost,
-                    _seq: logSeq++
-                });
+                const ep = log[i].ep;
+                if (!epData[ep]) epData[ep] = {};
+                const key = name === 'DQN' ? 'dqn' : 'rl';
+                epData[ep][key] = {score: log[i].score, lost: log[i].balls_lost};
             }
             lastLogLen[name] = log.length;
             changed = true;
@@ -284,13 +283,26 @@ function updateCombinedLog(data) {
     }
     if (!changed) return;
 
-    // Sort by sequence descending (most recent first), keep last 20
-    const rows = allLogs.slice(-20).reverse();
+    // Sort episode numbers descending
+    const epNums = Object.keys(epData).map(Number).sort((a, b) => b - a).slice(0, 20);
     const tbody = document.getElementById('combined-elog-body');
     if (!tbody) return;
-    tbody.innerHTML = rows.map(r => {
-        const cls = r.agent === 'DQN' ? 'ep-row-dqn' : 'ep-row-rl';
-        return '<tr class="' + cls + '"><td>' + r.agent + '</td><td>' + r.ep + '</td><td>' + r.score + '</td><td>' + r.steps + '</td><td>' + r.balls_lost + '</td></tr>';
+
+    tbody.innerHTML = epNums.map(ep => {
+        const d = epData[ep];
+        const dqn = d.dqn || null;
+        const rl = d.rl || null;
+        const dqnScore = dqn ? dqn.score : '--';
+        const dqnLost = dqn ? dqn.lost : '--';
+        const rlScore = rl ? rl.score : '--';
+        const rlLost = rl ? rl.lost : '--';
+        return '<tr>'
+            + '<td>' + ep + '</td>'
+            + '<td style="color:var(--blue);">' + dqnScore + '</td>'
+            + '<td style="color:var(--blue);">' + dqnLost + '</td>'
+            + '<td style="color:var(--green);">' + rlScore + '</td>'
+            + '<td style="color:var(--green);">' + rlLost + '</td>'
+            + '</tr>';
     }).join('');
 }
 
