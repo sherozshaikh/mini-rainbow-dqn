@@ -2,25 +2,29 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# No system deps needed -- Atari renders to numpy arrays (rgb_array mode)
-
 # Install uv (fast pip replacement)
 RUN pip install --no-cache-dir uv
 
-# Deps layer (cached unless pyproject.toml changes)
-COPY pyproject.toml README.md ./
-RUN uv pip install --system --no-cache ".[api]" Pillow
-
-# Install PyTorch CPU (smallest footprint for inference)
+# Install PyTorch CPU first (largest layer, cached across builds)
 RUN uv pip install --system --no-cache torch --index-url https://download.pytorch.org/whl/cpu
 
-# Application code (selective copy, no tests/configs/scripts bloat)
-COPY mini_rainbow/src/ ./mini_rainbow/src/
-COPY mini_rainbow/__init__.py ./mini_rainbow/
-COPY mini_rainbow/scripts/demo.py ./mini_rainbow/scripts/
-COPY mini_rainbow/scripts/__init__.py ./mini_rainbow/scripts/
+# Install API deps without building the project itself
+RUN uv pip install --system --no-cache \
+    "gymnasium[atari]>=1.0.0,<2.0.0" \
+    "ale-py>=0.10.0" \
+    "numpy>=1.24.0" \
+    "fastapi>=0.109.0" \
+    "uvicorn[standard]>=0.27.0" \
+    "Pillow>=10.0.0"
 
-# Bake checkpoints into image (no volume mounts needed)
+# Application code
+COPY pyproject.toml README.md ./
+COPY mini_rainbow/__init__.py ./mini_rainbow/
+COPY mini_rainbow/src/ ./mini_rainbow/src/
+COPY mini_rainbow/scripts/__init__.py ./mini_rainbow/scripts/
+COPY mini_rainbow/scripts/demo.py ./mini_rainbow/scripts/
+
+# Bake checkpoints into image
 COPY gdrive/checkpoints/stage1_dqn_best.pt ./checkpoints/stage1_dqn_best.pt
 COPY gdrive/checkpoints/stage2_rainbow_lite_best.pt ./checkpoints/stage2_rainbow_lite_best.pt
 
@@ -31,4 +35,6 @@ ENV DEVICE=cpu
 
 EXPOSE 8000
 
-CMD ["python", "-m", "mini_rainbow.scripts.demo", "--checkpoint", "/app/checkpoints/stage1_dqn_best.pt"]
+CMD ["python", "-m", "mini_rainbow.scripts.demo", \
+     "--dqn-checkpoint", "/app/checkpoints/stage1_dqn_best.pt", \
+     "--rainbow-checkpoint", "/app/checkpoints/stage2_rainbow_lite_best.pt"]
