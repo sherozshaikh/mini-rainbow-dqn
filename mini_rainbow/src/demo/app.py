@@ -93,6 +93,7 @@ def _make_agent_state(name: str) -> dict:
         "action_counts": [0, 0, 0, 0],  # NOOP, FIRE, RIGHT, LEFT
         "lives": 5,
         "balls_lost": 0,
+        "episode_log": [],  # [{ep, score, steps, balls_lost}, ...]
     }
 
 
@@ -156,6 +157,17 @@ def _game_loop() -> None:
                         a["avg_score_10"] = float(np.mean(a["recent_scores"][-10:]))
                         a["aps"] = ep_steps[name] / elapsed
                         a["best_score"] = max(a["best_score"], ep_rewards[name])
+                        # Append to episode log (keep last 20)
+                        a["episode_log"].append(
+                            {
+                                "ep": ep_counts[name],
+                                "score": ep_rewards[name],
+                                "steps": ep_steps[name],
+                                "balls_lost": a["balls_lost"],
+                            }
+                        )
+                        if len(a["episode_log"]) > 20:
+                            a["episode_log"] = a["episode_log"][-20:]
                         logger.info(f"[{name}] ep {ep_counts[name]}: score={ep_rewards[name]:.0f}")
 
                 raw, _ = env.reset()
@@ -302,6 +314,7 @@ def stream():
                         "action_counts": a["action_counts"],
                         "lives": a["lives"],
                         "balls_lost": a["balls_lost"],
+                        "episode_log": a["episode_log"],
                     }
             payload["_speed"] = _speed
             yield f"data: {json.dumps(payload)}\n\n"

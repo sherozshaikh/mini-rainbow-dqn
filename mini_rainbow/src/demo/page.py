@@ -30,7 +30,7 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe
 .speed-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
 
 /* Main layout */
-.main { display:grid; grid-template-columns:1fr 1fr; gap:0; height:calc(100vh - 45px); }
+.main { display:grid; grid-template-columns:1fr 1fr; gap:0; height:calc(100vh - 45px - 180px); overflow-y:auto; }
 
 /* Agent column */
 .agent-col { border-right:1px solid var(--border); display:flex; flex-direction:column; overflow-y:auto; }
@@ -73,6 +73,16 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe
 .action-track { flex:1; height:14px; background:#21262d; border-radius:3px; overflow:hidden; }
 .action-fill { height:100%; border-radius:3px; transition:width .3s ease; }
 .action-pct { width:40px; font-size:11px; color:var(--muted); font-family:'Courier New',monospace; text-align:right; }
+
+/* Combined episode log */
+.combined-log { background:var(--bg2); border-top:1px solid var(--border); }
+.combined-log-wrap { max-height:160px; overflow-y:auto; padding:0 16px 8px; }
+.ep-table { width:100%; border-collapse:collapse; font-size:11px; font-family:'Courier New',monospace; }
+.ep-table th { text-align:left; color:var(--muted); font-weight:normal; text-transform:uppercase; font-size:10px; letter-spacing:0.5px; padding:4px 8px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--bg2); }
+.ep-table td { padding:3px 8px; border-bottom:1px solid #21262d; }
+.ep-log-empty { font-size:11px; color:var(--dim); padding:8px 0; }
+.ep-row-dqn td { color:var(--blue); }
+.ep-row-rl td { color:var(--green); }
 
 /* Footer */
 .ftr { padding:8px 12px; font-size:10px; color:var(--dim); display:flex; gap:12px; flex-wrap:wrap; }
@@ -172,6 +182,17 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe
     </div>
 </div>
 
+<!-- Combined episode log spanning full width -->
+<div class="combined-log">
+    <div class="section-title" style="padding:8px 16px 4px;">Episode Log</div>
+    <div class="combined-log-wrap">
+        <table class="ep-table" id="combined-elog">
+            <thead><tr><th>Agent</th><th>#</th><th>Score</th><th>Steps</th><th>Lost</th></tr></thead>
+            <tbody id="combined-elog-body"><tr><td colspan="5" class="ep-log-empty">Waiting for first episode to complete...</td></tr></tbody>
+        </table>
+    </div>
+</div>
+
 <script>
 const agents = ['DQN', 'Rainbow-Lite'];
 
@@ -234,12 +255,52 @@ function updateAgent(name, d) {
     }
 }
 
+// Combined episode log
+const allLogs = [];  // [{agent, ep, score, steps, balls_lost, _seq}]
+let logSeq = 0;
+const lastLogLen = {'DQN': 0, 'Rainbow-Lite': 0};
+
+function updateCombinedLog(data) {
+    let changed = false;
+    for (const name of agents) {
+        const d = data[name];
+        if (!d || !d.episode_log) continue;
+        const log = d.episode_log;
+        if (log.length > lastLogLen[name]) {
+            // New episodes completed
+            for (let i = lastLogLen[name]; i < log.length; i++) {
+                allLogs.push({
+                    agent: name,
+                    ep: log[i].ep,
+                    score: log[i].score,
+                    steps: log[i].steps,
+                    balls_lost: log[i].balls_lost,
+                    _seq: logSeq++
+                });
+            }
+            lastLogLen[name] = log.length;
+            changed = true;
+        }
+    }
+    if (!changed) return;
+
+    // Sort by sequence descending (most recent first), keep last 20
+    const rows = allLogs.slice(-20).reverse();
+    const tbody = document.getElementById('combined-elog-body');
+    if (!tbody) return;
+    tbody.innerHTML = rows.map(r => {
+        const cls = r.agent === 'DQN' ? 'ep-row-dqn' : 'ep-row-rl';
+        return '<tr class="' + cls + '"><td>' + r.agent + '</td><td>' + r.ep + '</td><td>' + r.score + '</td><td>' + r.steps + '</td><td>' + r.balls_lost + '</td></tr>';
+    }).join('');
+}
+
 const src = new EventSource('/stream');
 src.onmessage = function(e) {
     const data = JSON.parse(e.data);
     for (const name of agents) {
         if (data[name]) updateAgent(name, data[name]);
     }
+    updateCombinedLog(data);
 };
 </script>
 </body>
