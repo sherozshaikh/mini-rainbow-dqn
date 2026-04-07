@@ -91,7 +91,6 @@ body { background:var(--bg); color:var(--text); font-family:-apple-system,'Segoe
         <button class="speed-btn active" onclick="setSpeed(1)">1x</button>
         <button class="speed-btn" onclick="setSpeed(10)">10x</button>
         <button class="speed-btn" onclick="setSpeed(30)">30x</button>
-        <button class="speed-btn" onclick="setSpeed(50)">50x</button>
     </div>
 </div>
 

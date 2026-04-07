@@ -321,7 +321,7 @@ def health():
 def set_speed(multiplier: float):
     """Set game speed multiplier."""
     global _speed
-    _speed = max(1.0, min(multiplier, 50.0))
+    _speed = max(1.0, min(multiplier, 30.0))
     logger.info(f"Speed set to {_speed}x")
     return {"speed": _speed}
 
