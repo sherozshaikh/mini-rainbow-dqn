@@ -1,4 +1,4 @@
-"""Self-contained HTML page for the live demo dashboard."""
+"""Self-contained HTML page for the live platform dashboard."""
 
 HTML_PAGE = """<!DOCTYPE html>
 <html lang="en">

@@ -170,21 +170,21 @@ health:
 	@curl -sf http://localhost:8000/health | python3 -m json.tool || echo "API not reachable"
 
 # ---------------------------------------------------------------------------
-# Demo (live agent playing in browser + Grafana dashboard)
+# Platform (live agent + monitoring)
 # ---------------------------------------------------------------------------
 
-## Run demo locally: DQN vs Rainbow-Lite side-by-side (http://localhost:8000)
-demo:
-	PYTHONPATH=. $(PYTHON) -m mini_rainbow.scripts.demo \
+## Run platform locally: DQN vs Rainbow-Lite side-by-side (http://localhost:8000)
+run:
+	PYTHONPATH=. $(PYTHON) -m mini_rainbow.scripts.platform \
 		--dqn-checkpoint gdrive/checkpoints/stage1_dqn_best.pt \
 		--rainbow-checkpoint gdrive/checkpoints/stage2_rainbow_lite_best.pt
 
-## Start full demo stack: agent + Prometheus + Grafana (docker-compose)
-demo-stack:
+## Start full stack: platform + Prometheus + Grafana (docker-compose)
+up:
 	docker compose up --build
 
-## Stop demo stack
-demo-stop:
+## Stop all services
+down:
 	docker compose down
 
 # ---------------------------------------------------------------------------
@@ -271,10 +271,10 @@ help:
 	@echo "  Evaluation:"
 	@echo "    make eval CKPT=path       Evaluate a checkpoint"
 	@echo ""
-	@echo "  Demo:"
-	@echo "    make demo                 Run live demo locally (port 8000)"
-	@echo "    make demo-stack           Start full stack (demo + Prometheus + Grafana)"
-	@echo "    make demo-stop            Stop demo stack"
+	@echo "  Platform:"
+	@echo "    make run                  Run platform locally (port 8000)"
+	@echo "    make up                   Start full stack (platform + Prometheus + Grafana)"
+	@echo "    make down                 Stop all services"
 	@echo ""
 	@echo "  API:"
 	@echo "    make serve CKPT=path      Start inference API server"
@@ -294,6 +294,6 @@ help:
 .PHONY: setup install install-all install-torch-cu126 install-torch-cu124 install-torch-cu121 install-torch-cu118 install-torch-cpu \
         train-stage1 train-stage2 train smoke-test validate-all \
         eval serve health \
-        demo demo-stack demo-stop \
+        run up down \
         docker-build docker-run docker-push \
         lint format test clean help

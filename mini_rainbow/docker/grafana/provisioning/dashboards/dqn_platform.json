@@ -121,12 +121,12 @@
   ],
   "refresh": "5s",
   "schemaVersion": 39,
-  "tags": ["dqn", "demo"],
+  "tags": ["dqn", "reinforcement-learning"],
   "templating": { "list": [] },
   "time": { "from": "now-15m", "to": "now" },
   "timepicker": {},
   "timezone": "",
-  "title": "DQN Live Demo",
-  "uid": "dqn-demo",
+  "title": "Mini-Rainbow DQN",
+  "uid": "mini-rainbow-dqn",
   "version": 1
 }

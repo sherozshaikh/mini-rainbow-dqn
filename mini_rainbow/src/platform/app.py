@@ -1,4 +1,4 @@
-"""Live demo: DQN vs Rainbow-Lite playing Breakout side-by-side.
+"""Live platform: DQN vs Rainbow-Lite playing Breakout side-by-side.
 
 Two trained agents play simultaneously. Frames are staggered (alternate stepping)
 so CPU usage equals one game at 30 FPS. Each game renders at ~15 FPS.
@@ -25,7 +25,7 @@ from gymnasium.wrappers import AtariPreprocessing
 from PIL import Image
 from pydantic import BaseModel
 
-from mini_rainbow.src.demo.page import HTML_PAGE
+from mini_rainbow.src.platform.page import HTML_PAGE
 from mini_rainbow.src.networks.dueling_q_network import DuelingQNetwork
 from mini_rainbow.src.networks.q_network import QNetwork
 from mini_rainbow.src.utils.checkpoint import load_checkpoint
@@ -33,7 +33,7 @@ from mini_rainbow.src.utils.checkpoint import load_checkpoint
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-app = FastAPI(title="Mini-Rainbow DQN Live Demo", version="1.0.0")
+app = FastAPI(title="Mini-Rainbow DQN Platform", version="1.0.0")
 
 # ---------------------------------------------------------------------------
 # Global state
@@ -354,7 +354,6 @@ def metrics():
     with _lock:
         lines = []
         for name, a in _agents.items():
-            tag = name.lower().replace("-", "_")
             lines += [
                 f'dqn_episodes_total{{agent="{name}"}} {a["total_episodes"]}',
                 f'dqn_steps_total{{agent="{name}"}} {a["total_steps"]}',

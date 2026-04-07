@@ -1,4 +1,4 @@
-"""Launch the live demo server. Run with: python -m mini_rainbow.scripts.demo"""
+"""Launch the platform server. Run with: python -m mini_rainbow.scripts.platform"""
 
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Start live DQN demo server")
+    parser = argparse.ArgumentParser(description="Start Mini-Rainbow DQN platform")
     parser.add_argument(
         "--dqn-checkpoint",
         type=str,
@@ -40,9 +40,9 @@ def main() -> None:
     os.environ["RAINBOW_CHECKPOINT"] = args.rainbow_checkpoint
     os.environ["DEVICE"] = args.device
 
-    from mini_rainbow.src.demo.app import app
+    from mini_rainbow.src.platform.app import app
 
-    logger.info(f"Starting demo server on {args.host}:{args.port}")
+    logger.info(f"Starting platform on {args.host}:{args.port}")
     uvicorn.run(app, host=args.host, port=args.port)
 
 

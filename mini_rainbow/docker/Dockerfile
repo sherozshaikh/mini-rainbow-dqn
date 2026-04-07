@@ -1,21 +1,43 @@
 FROM python:3.11-slim
 
-# System deps: ffmpeg for video recording, minimal libs for Atari rendering
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
-# Copy only what's needed
+# Install uv (fast pip replacement)
+RUN pip install --no-cache-dir uv
+
+# Install PyTorch CPU first (largest layer, cached across builds)
+RUN uv pip install --system --no-cache torch --index-url https://download.pytorch.org/whl/cpu
+
+# Install deps (ale-py>=0.10 bundles ROMs, no autorom needed)
+RUN uv pip install --system --no-cache \
+    "gymnasium[atari]>=1.0.0,<2.0.0" \
+    "ale-py>=0.10.0" \
+    "opencv-python-headless>=4.8.0" \
+    "numpy>=1.24.0" \
+    "fastapi>=0.109.0" \
+    "uvicorn[standard]>=0.27.0" \
+    "Pillow>=10.0.0" \
+    && python -c "import cv2; print('cv2 OK')" \
+    && python -c "import ale_py; print('ALE OK')"
+
+# Application code
 COPY pyproject.toml README.md ./
-COPY mini_rainbow/ ./mini_rainbow/
+COPY mini_rainbow/__init__.py ./mini_rainbow/
+COPY mini_rainbow/src/ ./mini_rainbow/src/
+COPY mini_rainbow/scripts/__init__.py ./mini_rainbow/scripts/
+COPY mini_rainbow/scripts/platform.py ./mini_rainbow/scripts/
 
-# Install PyTorch CPU (smallest footprint; override at build for GPU)
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+# Bake checkpoints into image
+COPY gdrive/checkpoints/stage1_dqn_best.pt ./checkpoints/stage1_dqn_best.pt
+COPY gdrive/checkpoints/stage2_rainbow_lite_best.pt ./checkpoints/stage2_rainbow_lite_best.pt
 
-# Install core + video (no wandb, no API, no dev tools)
-RUN pip install --no-cache-dir -e ".[video]"
+ENV PYTHONPATH=/app
+ENV DQN_CHECKPOINT=/app/checkpoints/stage1_dqn_best.pt
+ENV RAINBOW_CHECKPOINT=/app/checkpoints/stage2_rainbow_lite_best.pt
+ENV DEVICE=cpu
 
-# Default: run training
-ENTRYPOINT ["python", "-m", "mini_rainbow.scripts.train"]
+EXPOSE 8000
+
+CMD ["python", "-m", "mini_rainbow.scripts.platform", \
+     "--dqn-checkpoint", "/app/checkpoints/stage1_dqn_best.pt", \
+     "--rainbow-checkpoint", "/app/checkpoints/stage2_rainbow_lite_best.pt"]

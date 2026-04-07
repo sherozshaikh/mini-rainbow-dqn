@@ -1,8 +1,8 @@
 services:
-  demo:
+  platform:
     build:
       context: .
-      dockerfile: mini_rainbow/docker/Dockerfile.demo
+      dockerfile: mini_rainbow/docker/Dockerfile
     ports:
       - "8000:8000"
     environment:
@@ -15,7 +15,7 @@ services:
     volumes:
       - ./mini_rainbow/docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     depends_on:
-      - demo
+      - platform
 
   grafana:
     image: grafana/grafana:latest
