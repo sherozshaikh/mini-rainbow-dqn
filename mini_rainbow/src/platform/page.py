@@ -5,7 +5,7 @@ HTML_PAGE = """<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mini-Rainbow DQN &mdash; Live Demo</title>
+<title>Mini-Rainbow DQN</title>
 <style>
 :root {
     --bg: #0d1117; --bg2: #161b22; --border: #30363d;

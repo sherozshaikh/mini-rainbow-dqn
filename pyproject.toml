@@ -20,7 +20,7 @@ dependencies = [
 [project.optional-dependencies]
 # W&B experiment tracking (training only, graceful fallback if missing)
 wandb = ["wandb>=0.16.0"]
-# Inference API server + demo
+# Inference API server + platform
 api = [
     "fastapi>=0.109.0",
     "uvicorn[standard]>=0.27.0",
