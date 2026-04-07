@@ -7,49 +7,77 @@
   "links": [],
   "panels": [
     {
-      "title": "Episode Score",
+      "title": "Episode Score (per episode)",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
       "targets": [
         {
-          "expr": "dqn_current_score",
-          "legendFormat": "Current Score"
+          "expr": "dqn_current_score{agent=\"DQN\"}",
+          "legendFormat": "DQN"
+        },
+        {
+          "expr": "dqn_current_score{agent=\"Rainbow-Lite\"}",
+          "legendFormat": "Rainbow-Lite"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "fixed", "fixedColor": "#4fc3f7" },
-          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "pointSize": 5, "showPoints": "always" }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "DQN" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#58a6ff" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Rainbow-Lite" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#3fb950" } }]
+          }
+        ]
       }
     },
     {
-      "title": "Avg Score (Last 10 Episodes)",
+      "title": "Best Score",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
       "targets": [
         {
-          "expr": "dqn_avg_score_last_10",
-          "legendFormat": "Avg Score (10 ep)"
+          "expr": "dqn_best_score{agent=\"DQN\"}",
+          "legendFormat": "DQN Best"
+        },
+        {
+          "expr": "dqn_best_score{agent=\"Rainbow-Lite\"}",
+          "legendFormat": "Rainbow-Lite Best"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "color": { "mode": "fixed", "fixedColor": "#81c784" },
-          "custom": { "lineWidth": 2, "fillOpacity": 10 }
+          "custom": { "lineWidth": 2, "fillOpacity": 5 }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "DQN Best" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#58a6ff" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Rainbow-Lite Best" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "#3fb950" } }]
+          }
+        ]
       }
     },
     {
-      "title": "Total Episodes",
+      "title": "Episodes Completed",
       "type": "stat",
       "gridPos": { "h": 4, "w": 6, "x": 0, "y": 8 },
       "targets": [
         {
-          "expr": "dqn_episodes_total",
-          "legendFormat": "Episodes"
+          "expr": "dqn_episodes_total{agent=\"DQN\"}",
+          "legendFormat": "DQN"
+        },
+        {
+          "expr": "dqn_episodes_total{agent=\"Rainbow-Lite\"}",
+          "legendFormat": "Rainbow-Lite"
         }
       ],
       "fieldConfig": {
@@ -65,8 +93,12 @@
       "gridPos": { "h": 4, "w": 6, "x": 6, "y": 8 },
       "targets": [
         {
-          "expr": "dqn_steps_total",
-          "legendFormat": "Steps"
+          "expr": "dqn_steps_total{agent=\"DQN\"}",
+          "legendFormat": "DQN"
+        },
+        {
+          "expr": "dqn_steps_total{agent=\"Rainbow-Lite\"}",
+          "legendFormat": "Rainbow-Lite"
         }
       ],
       "fieldConfig": {
@@ -83,7 +115,7 @@
       "targets": [
         {
           "expr": "dqn_actions_per_second",
-          "legendFormat": "APS"
+          "legendFormat": "{{agent}}"
         }
       ],
       "fieldConfig": {
@@ -107,8 +139,12 @@
       "gridPos": { "h": 4, "w": 6, "x": 18, "y": 8 },
       "targets": [
         {
-          "expr": "dqn_total_reward",
-          "legendFormat": "Total Reward"
+          "expr": "dqn_total_reward{agent=\"DQN\"}",
+          "legendFormat": "DQN"
+        },
+        {
+          "expr": "dqn_total_reward{agent=\"Rainbow-Lite\"}",
+          "legendFormat": "Rainbow-Lite"
         }
       ],
       "fieldConfig": {
