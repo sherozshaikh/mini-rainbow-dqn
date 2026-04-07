@@ -193,7 +193,7 @@ down:
 
 ## Build platform image (live agent + metrics, baked checkpoints)
 docker-build:
-	docker build -t $(IMAGE):$(TAG) -f mini_rainbow/docker/Dockerfile.demo .
+	docker build -t $(IMAGE):$(TAG) -f mini_rainbow/docker/Dockerfile .
 
 ## Run platform locally
 docker-run:
