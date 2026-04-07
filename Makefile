@@ -1,7 +1,7 @@
 DOCKER_HUB_USER := sherozshaikh
 PROJECT         := mini-rainbow-dqn
 IMAGE           := $(DOCKER_HUB_USER)/$(PROJECT)
-TAG             := v0.1.0
+TAG             := v1.0.0
 PYTHON          := python
 DEVICE          := auto
 

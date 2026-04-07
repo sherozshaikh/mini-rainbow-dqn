@@ -33,7 +33,7 @@ from mini_rainbow.src.utils.checkpoint import load_checkpoint
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
-app = FastAPI(title="Mini-Rainbow DQN Live Demo", version="0.1.0")
+app = FastAPI(title="Mini-Rainbow DQN Live Demo", version="1.0.0")
 
 # ---------------------------------------------------------------------------
 # Global state

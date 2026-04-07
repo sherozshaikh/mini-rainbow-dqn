@@ -1,6 +1,6 @@
 [project]
 name = "mini-rainbow"
-version = "0.1.0"
+version = "1.0.0"
 description = "Production-grade modular Deep Q-Learning system"
 readme = "README.md"
 license = {text = "MIT"}

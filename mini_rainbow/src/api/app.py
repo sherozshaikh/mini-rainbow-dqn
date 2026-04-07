@@ -15,7 +15,7 @@ from mini_rainbow.src.utils.checkpoint import load_checkpoint
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Mini-Rainbow DQN Inference API", version="0.1.0")
+app = FastAPI(title="Mini-Rainbow DQN Inference API", version="1.0.0")
 
 # Global model state (loaded on startup)
 _model: torch.nn.Module | None = None
