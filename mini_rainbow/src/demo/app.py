@@ -203,7 +203,7 @@ def index():
 
 @app.get("/stream")
 def stream():
-    """SSE stream of game frames."""
+    """SSE stream of game frames + metrics."""
 
     def event_stream():
         while True:
@@ -213,7 +213,13 @@ def stream():
                     f'"q_values":{_frame_buffer["q_values"]},'
                     f'"score":{_frame_buffer["score"]},'
                     f'"episode":{_frame_buffer["episode"]},'
-                    f'"step":{_frame_buffer["step"]}}}'
+                    f'"step":{_frame_buffer["step"]},'
+                    f'"total_episodes":{_metrics["total_episodes"]},'
+                    f'"total_steps":{_metrics["total_steps"]},'
+                    f'"avg_score":{_metrics["avg_score_last_10"]:.2f},'
+                    f'"aps":{_metrics["actions_per_second"]:.1f},'
+                    f'"total_reward":{_metrics["total_reward"]:.0f},'
+                    f'"recent_scores":{list(_metrics["recent_scores"])}}}'
                 )
             yield f"data: {data}\n\n"
             time.sleep(1 / 20)  # 20 FPS to browser
@@ -286,85 +292,202 @@ HTML_PAGE = """<!DOCTYPE html>
     <title>Mini-Rainbow DQN — Live Demo</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #0a0a0a; color: #e0e0e0; font-family: 'Courier New', monospace; }
-        .container { display: flex; height: 100vh; }
-        .game-panel { flex: 1; display: flex; align-items: center; justify-content: center; background: #111; }
-        .game-panel img { border: 2px solid #333; image-rendering: pixelated; }
-        .info-panel { width: 340px; padding: 20px; background: #1a1a1a; border-left: 1px solid #333; overflow-y: auto; }
-        h1 { font-size: 16px; color: #4fc3f7; margin-bottom: 15px; }
-        h2 { font-size: 13px; color: #81c784; margin: 15px 0 8px 0; text-transform: uppercase; }
-        .stat { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; border-bottom: 1px solid #222; }
-        .stat-value { color: #fff; font-weight: bold; }
-        .q-bar-container { margin: 3px 0; }
-        .q-bar-label { font-size: 11px; color: #888; }
-        .q-bar { height: 14px; background: #333; border-radius: 2px; margin: 2px 0; position: relative; }
-        .q-bar-fill { height: 100%; border-radius: 2px; transition: width 0.1s; }
-        .q-bar-fill.best { background: #4fc3f7; }
-        .q-bar-fill.other { background: #37474f; }
-        .q-val { position: absolute; right: 4px; top: 0; font-size: 10px; color: #fff; line-height: 14px; }
-        .actions { font-size: 11px; color: #666; margin-top: 20px; }
-        .footer { margin-top: 20px; font-size: 11px; color: #555; }
-        .footer a { color: #4fc3f7; }
+        body { background: #0d1117; color: #c9d1d9; font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; }
+
+        .header { background: #161b22; border-bottom: 1px solid #30363d; padding: 12px 24px; display: flex; align-items: center; gap: 12px; }
+        .header h1 { font-size: 18px; color: #58a6ff; font-weight: 600; }
+        .header .badge { background: #238636; color: #fff; font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+
+        .main { display: grid; grid-template-columns: 340px 1fr; grid-template-rows: 1fr; height: calc(100vh - 49px); }
+
+        /* Left: Game */
+        .game-col { background: #0d1117; display: flex; flex-direction: column; align-items: center; justify-content: center; border-right: 1px solid #30363d; }
+        .game-col img { border: 2px solid #30363d; border-radius: 4px; image-rendering: pixelated; }
+        .game-score { margin-top: 12px; font-size: 28px; font-weight: 700; color: #58a6ff; }
+        .game-score-label { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Right: Dashboard */
+        .dash-col { overflow-y: auto; padding: 20px; }
+
+        .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 14px; }
+        .card-label { font-size: 11px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .card-value { font-size: 24px; font-weight: 700; color: #c9d1d9; }
+        .card-value.blue { color: #58a6ff; }
+        .card-value.green { color: #3fb950; }
+        .card-value.orange { color: #d29922; }
+
+        .section-title { font-size: 13px; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin: 20px 0 10px 0; border-bottom: 1px solid #21262d; padding-bottom: 6px; }
+
+        /* Q-values */
+        .q-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+        .q-label { width: 50px; font-size: 12px; color: #8b949e; text-align: right; }
+        .q-track { flex: 1; height: 20px; background: #21262d; border-radius: 3px; position: relative; overflow: hidden; }
+        .q-fill { height: 100%; border-radius: 3px; transition: width 0.15s ease; }
+        .q-fill.best { background: linear-gradient(90deg, #1f6feb, #58a6ff); }
+        .q-fill.other { background: #30363d; }
+        .q-num { width: 65px; font-size: 12px; color: #c9d1d9; font-family: 'Courier New', monospace; text-align: right; }
+
+        /* Score chart */
+        .chart-container { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 14px; margin-top: 12px; }
+        .chart-container canvas { width: 100%; height: 120px; }
+
+        /* Footer */
+        .footer { margin-top: 20px; font-size: 11px; color: #484f58; display: flex; gap: 16px; }
+        .footer a { color: #58a6ff; text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="game-panel">
-        <img id="gameFrame" width="320" height="420" alt="Breakout">
+
+<div class="header">
+    <h1>Mini-Rainbow DQN</h1>
+    <span class="badge">LIVE</span>
+    <span style="font-size:13px; color:#8b949e;">Trained agent playing Atari Breakout</span>
+</div>
+
+<div class="main">
+    <!-- Game column -->
+    <div class="game-col">
+        <img id="gameFrame" width="280" height="370" alt="Breakout">
+        <div class="game-score" id="currentScore">0</div>
+        <div class="game-score-label">Current Score</div>
     </div>
-    <div class="info-panel">
-        <h1>Mini-Rainbow DQN</h1>
-        <p style="font-size:12px; color:#888; margin-bottom:15px;">Trained agent playing Atari Breakout</p>
 
-        <h2>Game Stats</h2>
-        <div class="stat"><span>Score</span><span class="stat-value" id="score">0</span></div>
-        <div class="stat"><span>Episode</span><span class="stat-value" id="episode">0</span></div>
-        <div class="stat"><span>Step</span><span class="stat-value" id="step">0</span></div>
+    <!-- Dashboard column -->
+    <div class="dash-col">
 
-        <h2>Q-Values (per action)</h2>
-        <div id="qvalues">
-            <div class="q-bar-container">
-                <div class="q-bar-label">NOOP</div>
-                <div class="q-bar"><div class="q-bar-fill other" id="q0" style="width:0%"><span class="q-val" id="qv0">0</span></div></div>
+        <!-- Metric cards -->
+        <div class="card-grid">
+            <div class="card">
+                <div class="card-label">Episode</div>
+                <div class="card-value blue" id="metEpisode">0</div>
             </div>
-            <div class="q-bar-container">
-                <div class="q-bar-label">FIRE</div>
-                <div class="q-bar"><div class="q-bar-fill other" id="q1" style="width:0%"><span class="q-val" id="qv1">0</span></div></div>
+            <div class="card">
+                <div class="card-label">Avg Score (10 ep)</div>
+                <div class="card-value green" id="metAvgScore">0</div>
             </div>
-            <div class="q-bar-container">
-                <div class="q-bar-label">RIGHT</div>
-                <div class="q-bar"><div class="q-bar-fill other" id="q2" style="width:0%"><span class="q-val" id="qv2">0</span></div></div>
+            <div class="card">
+                <div class="card-label">Actions / sec</div>
+                <div class="card-value orange" id="metAPS">0</div>
             </div>
-            <div class="q-bar-container">
-                <div class="q-bar-label">LEFT</div>
-                <div class="q-bar"><div class="q-bar-fill other" id="q3" style="width:0%"><span class="q-val" id="qv3">0</span></div></div>
+            <div class="card">
+                <div class="card-label">Total Steps</div>
+                <div class="card-value" id="metSteps">0</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Total Reward</div>
+                <div class="card-value" id="metReward">0</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Episode Step</div>
+                <div class="card-value" id="metEpStep">0</div>
             </div>
         </div>
 
-        <div class="actions">
-            <h2>Actions</h2>
-            <p>0 = NOOP &nbsp; 1 = FIRE &nbsp; 2 = RIGHT &nbsp; 3 = LEFT</p>
+        <!-- Q-values -->
+        <div class="section-title">Q-Values (Action Selection)</div>
+        <div class="q-row"><span class="q-label">NOOP</span><div class="q-track"><div class="q-fill other" id="q0"></div></div><span class="q-num" id="qv0">0.000</span></div>
+        <div class="q-row"><span class="q-label">FIRE</span><div class="q-track"><div class="q-fill other" id="q1"></div></div><span class="q-num" id="qv1">0.000</span></div>
+        <div class="q-row"><span class="q-label">RIGHT</span><div class="q-track"><div class="q-fill other" id="q2"></div></div><span class="q-num" id="qv2">0.000</span></div>
+        <div class="q-row"><span class="q-label">LEFT</span><div class="q-track"><div class="q-fill other" id="q3"></div></div><span class="q-num" id="qv3">0.000</span></div>
+
+        <!-- Score history chart -->
+        <div class="section-title">Score History</div>
+        <div class="chart-container">
+            <canvas id="scoreChart" height="120"></canvas>
+        </div>
+
+        <!-- Info -->
+        <div class="section-title">Model Info</div>
+        <div style="font-size:13px; color:#8b949e; line-height:1.8;">
+            Architecture: Nature DQN (3-layer CNN + 2-layer FC)<br>
+            Environment: ALE/Breakout-v5<br>
+            Training: 5M steps on NVIDIA RTX A6000<br>
+            Policy: Greedy (epsilon = 0)
         </div>
 
         <div class="footer">
-            <p>Architecture: Nature DQN (CNN)</p>
-            <p>Environment: ALE/Breakout-v5</p>
-            <p><a href="/health">/health</a> &middot; <a href="/metrics">/metrics</a></p>
+            <a href="/health">/health</a>
+            <a href="/metrics">/metrics (Prometheus)</a>
+            <span>github.com/sherozshaikh/mini-rainbow-dqn</span>
         </div>
     </div>
 </div>
+
 <script>
-const img = document.getElementById('gameFrame');
+// Score history for chart
+const scoreHistory = [];
+const maxHistory = 50;
+
+const canvas = document.getElementById('scoreChart');
+const ctx = canvas.getContext('2d');
+
+function drawChart() {
+    const w = canvas.width = canvas.offsetWidth;
+    const h = canvas.height = 120;
+    ctx.clearRect(0, 0, w, h);
+
+    if (scoreHistory.length < 2) return;
+
+    const maxVal = Math.max(...scoreHistory, 1);
+    const step = w / (maxHistory - 1);
+
+    // Grid lines
+    ctx.strokeStyle = '#21262d';
+    ctx.lineWidth = 1;
+    for (let y = 0; y < h; y += 30) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+
+    // Line
+    ctx.beginPath();
+    ctx.strokeStyle = '#58a6ff';
+    ctx.lineWidth = 2;
+    const startIdx = Math.max(0, scoreHistory.length - maxHistory);
+    for (let i = startIdx; i < scoreHistory.length; i++) {
+        const x = (i - startIdx) * step;
+        const y = h - (scoreHistory[i] / maxVal) * (h - 10) - 5;
+        if (i === startIdx) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Fill under
+    ctx.lineTo((scoreHistory.length - 1 - startIdx) * step, h);
+    ctx.lineTo(0, h);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(88,166,255,0.08)';
+    ctx.fill();
+
+    // Max label
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '10px monospace';
+    ctx.fillText('max: ' + maxVal.toFixed(0), 4, 12);
+}
+
+let lastEpisode = 0;
+
 const evtSource = new EventSource('/stream');
 evtSource.onmessage = function(event) {
     const d = JSON.parse(event.data);
-    if (d.frame) {
-        img.src = 'data:image/jpeg;base64,' + d.frame;
-    }
-    document.getElementById('score').textContent = d.score;
-    document.getElementById('episode').textContent = d.episode;
-    document.getElementById('step').textContent = d.step;
 
+    // Game frame
+    if (d.frame) {
+        document.getElementById('gameFrame').src = 'data:image/jpeg;base64,' + d.frame;
+    }
+
+    // Current score
+    document.getElementById('currentScore').textContent = d.score;
+
+    // Metric cards
+    document.getElementById('metEpisode').textContent = d.total_episodes || d.episode;
+    document.getElementById('metAvgScore').textContent = parseFloat(d.avg_score || 0).toFixed(1);
+    document.getElementById('metAPS').textContent = parseFloat(d.aps || 0).toFixed(0);
+    document.getElementById('metSteps').textContent = (d.total_steps || 0).toLocaleString();
+    document.getElementById('metReward').textContent = parseFloat(d.total_reward || 0).toFixed(0);
+    document.getElementById('metEpStep').textContent = d.step;
+
+    // Q-values
     if (d.q_values && d.q_values.length === 4) {
         const qv = d.q_values;
         const maxQ = Math.max(...qv.map(Math.abs), 0.01);
@@ -373,11 +496,22 @@ evtSource.onmessage = function(event) {
             const pct = Math.max((qv[i] / maxQ) * 50 + 50, 2);
             const bar = document.getElementById('q' + i);
             bar.style.width = pct + '%';
-            bar.className = 'q-bar-fill ' + (i === bestIdx ? 'best' : 'other');
+            bar.className = 'q-fill ' + (i === bestIdx ? 'best' : 'other');
             document.getElementById('qv' + i).textContent = qv[i].toFixed(3);
         }
     }
+
+    // Score history chart (update on new episode)
+    if (d.recent_scores && d.recent_scores.length > 0 && d.total_episodes > lastEpisode) {
+        lastEpisode = d.total_episodes;
+        // Push the latest score
+        scoreHistory.push(d.recent_scores[d.recent_scores.length - 1]);
+        drawChart();
+    }
 };
+
+// Redraw chart on resize
+window.addEventListener('resize', drawChart);
 </script>
 </body>
 </html>"""
