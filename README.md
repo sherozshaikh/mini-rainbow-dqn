@@ -2,9 +2,12 @@
 
 **End-to-end deep reinforcement learning platform for Atari Breakout with side-by-side agent comparison, live inference, and observability**
 
+**Live demo: <https://mini-rainbow.apps.biosapplication.com/>**
+
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-3110/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Docker](https://img.shields.io/badge/docker-hub-blue.svg)](https://hub.docker.com/u/sherozshaikh)
+[![Live Demo](https://img.shields.io/badge/live-demo-brightgreen.svg)](https://mini-rainbow.apps.biosapplication.com/)
 
 ---
 
